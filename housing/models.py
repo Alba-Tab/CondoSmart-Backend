@@ -17,3 +17,10 @@ class Residency(TimeStampedBy):
     is_owner = models.BooleanField(default=False)
     start = models.DateField()
     end = models.DateField(null=True, blank=True)
+
+class Vehiculo(TimeStampedBy):
+    unidad = models.ForeignKey(Unidad, on_delete=models.CASCADE)
+    placa = models.CharField(max_length=16, unique=True)
+    marca = models.CharField(max_length=64, blank=True)
+    color = models.CharField(max_length=32, blank=True)
+    
