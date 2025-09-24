@@ -26,7 +26,7 @@ class Residency(TimeStampedBy):
         indexes = [models.Index(fields=["unidad","user","status"])]
         unique_together = [("user","unidad","start")] 
     def __str__(self): 
-        return f"{self.user.pk}@{self.unidad.pk}"
+        return f"{self.user.id}@{self.unidad.pk}"
     
 
 class Vehiculo(TimeStampedBy):

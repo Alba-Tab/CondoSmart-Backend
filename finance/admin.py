@@ -1,3 +1,5 @@
 from django.contrib import admin
-
-# Register your models here.
+from .models import Cargo, Pago, PagoCargo
+admin.site.register(Cargo)
+admin.site.register(Pago)
+admin.site.register(PagoCargo)
