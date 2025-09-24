@@ -1,3 +1,5 @@
 from django.contrib import admin
-
-# Register your models here.
+from .models import Visita, Acceso, Incidente
+admin.site.register(Visita)
+admin.site.register(Acceso)
+admin.site.register(Incidente)
