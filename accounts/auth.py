@@ -13,7 +13,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         user = authenticate(username=username_or_doc, password=password)
         if not user:
             try:
-                u = User.objects.get(document_id=username_or_doc)
+                u = User.objects.get(ci=username_or_doc)
             except User.DoesNotExist:
                 raise serializers.ValidationError({"detail":"Credenciales inválidas"})
             user = authenticate(username=u.username, password=password)
@@ -21,9 +21,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 raise serializers.ValidationError({"detail":"Credenciales inválidas"})
         data = super().validate({"username": user.username, "password": password})
         data["user"] = {# type: ignore
-            "id": user.id,# type: ignore
+            "pk": user.pk,
             "username": user.username,
-            "document_id": user.document_id,# type: ignore
+            "ci": user.ci, # type: ignore
             "first_name": user.first_name,
             "last_name": user.last_name,
             "email": user.email,

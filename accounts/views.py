@@ -14,19 +14,19 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuth]
-    filterset_fields = ["is_active", "document_id"]
-    search_fields = ["username", "document_id", "first_name", "last_name"]
+    filterset_fields = ["is_active", "ci"]
+    search_fields = ["username", "ci", "first_name", "last_name"]
     ordering_fields = "__all__"
     def get_queryset(self):
         user = self.request.user
         if user.is_staff:
             return CustomUser.objects.all()
         else:
-            return CustomUser.objects.filter(id=user.id) # type: ignore
+            return CustomUser.objects.filter(pk=user.pk) 
 
 class RolViewSet(viewsets.ModelViewSet):
     queryset = Rol.objects.select_related("user")
     serializer_class = RolSerializer
     permission_classes = [IsAuth, IsAdmin]
-    filterset_fields = ["user", "group_name"]
+    filterset_fields = ["user", "name"]
     ordering_fields = "__all__"

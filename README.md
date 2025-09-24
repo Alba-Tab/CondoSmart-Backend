@@ -16,6 +16,8 @@ python manage.py runserver 0.0.0.0:8000
 
 ## Credenciales ya creadas
 
+Esto es lo generado con create superuser
+
 ```Shell
 Username: albaro
 Email address: albaro@gmail.com
@@ -27,3 +29,7 @@ This password is entirely numeric.
 Bypass password validation and create user anyway? [y/N]: y
 Superuser created successfully.
 ```
+
+## ahora en postman
+
+Para empezar tenemos que hacer un login y poner el token valido en access para asi poder acceder a nuestros demas metodos que necsitan un login necesariamente.

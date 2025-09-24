@@ -6,8 +6,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ["id","username","password","first_name","last_name","email",
-                  "document_id","phone","is_active","is_staff"]
+        fields = ["pk","username","password","first_name","last_name","email",
+                  "ci","phone","is_active","is_staff"]
         read_only_fields = ["is_staff"] 
 
     def create(self, validated_data):
@@ -38,4 +38,4 @@ class RolSerializer(serializers.ModelSerializer):
 class MeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ["id","username","id_document","first_name","last_name","email","phone","is_active"]
+        fields = ["pk","username","ci","first_name","last_name","email","phone","is_active"]

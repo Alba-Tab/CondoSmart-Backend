@@ -1,42 +1,47 @@
 from rest_framework import viewsets
-from .models import Unidad, Residency
-from .serializers import UnidadSerializer, ResidencySerializer
-from core.permissions import IsAuth
-from rest_framework import filters
-from django_filters.rest_framework import DjangoFilterBackend
+from .models import Unidad, Residency, Vehiculo, Mascota, Contrato
+from .serializers import UnidadSerializer, ResidencySerializer, VehiculoSerializer, MascotaSerializer, ContratoSerializer
+from core.permissions import IsAuth, IsAdmin, IsResident
 from core.pagination import DefaultPagination
 
 class UnidadViewSet(viewsets.ModelViewSet):
-    def get_queryset(self):
-        user = self.request.user
-        qs = Unidad.objects.all().prefetch_related("residentes")
-        if user.is_staff or user.roles.filter(group_name='guard').exists():
-            return qs
-        elif user.roles.filter(group_name='resident').exists():
-            return qs.filter(residentes__user=user, residentes__end__isnull=True)
-        return Unidad.objects.none()
+    queryset = Unidad.objects.all()
     serializer_class = UnidadSerializer
     permission_classes = [IsAuth]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["is_active", "code"]
-    search_fields = ["code"]
+    filterset_fields = ["is_active", "code","user", "created_at", "updated_at"]
+    search_fields = ["code","user"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
 
 class ResidencyViewSet(viewsets.ModelViewSet):
-    #queryset = Residency.objects.select_related("user","unidad")
+    queryset = Residency.objects.select_related("user","unidad")
     serializer_class = ResidencySerializer
     permission_classes = [IsAuth]
-    filterset_fields = ["user","unidad","is_owner","start","end"]
+    filterset_fields = ["user","unidad","is_owner","tipo_ocupacion","status","start","end"]
     ordering_fields = "__all__"
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_staff or user.roles.filter(group_name='guard').exists():
-            return Residency.objects.select_related("user", "unidad")
-        elif user.roles.filter(group_name='resident').exists():
-            # Busca las unidades donde el usuario es residente activo
-            unidades_usuario = Unidad.objects.filter(residentes__user=user, residentes__end__isnull=True)
-            # Devuelve todas las residencias de esas unidades
-            return Residency.objects.select_related("user", "unidad").filter(unidad__in=unidades_usuario)
-        return Residency.objects.none()
     pagination_class = DefaultPagination
+
+class VehiculoViewSet(viewsets.ModelViewSet):
+    queryset = Vehiculo.objects.select_related("unidad","responsable")
+    serializer_class = VehiculoSerializer
+    permission_classes = [IsAuth]
+    filterset_fields = ["unidad","placa","marca","color","responsable"]
+    search_fields = ["placa","marca","color"]
+    ordering_fields = "__all__"
+    
+class MascotaViewSet(viewsets.ModelViewSet):
+    queryset = Mascota.objects.select_related("unidad","responsable")
+    serializer_class = MascotaSerializer
+    permission_classes = [IsAuth]
+    filterset_fields = ["unidad","tipo","activo","desde","hasta","responsable"]
+    search_fields = ["nombre","raza"]
+    ordering_fields = "__all__"
+    
+class ContratoViewSet(viewsets.ModelViewSet):
+    
+    queryset = Contrato.objects.select_related("unidad","inquilino")
+    serializer_class = ContratoSerializer
+    permission_classes = [IsAuth]
+    filterset_fields = ["unidad","inquilino","duenno","activo","start","end"]
+    ordering_fields = "__all__"
+    
