@@ -7,7 +7,7 @@ urlpatterns = [
     path("", include("housing.urls")),
     path("health/", HealthView.as_view(), name="health"),
     path("", include("security.urls")),
-    #path("", include("reservations.urls")),
+    path("", include("reservations.urls")),
     path("", include("finance.urls")),
     path("", include("communication.urls")),
     #path("", include("maintenance.urls")),

@@ -1,3 +1,6 @@
 from django.contrib import admin
-
-# Register your models here.
+from .models import AreaComun, Reserva, ReservaSuministro, Suministro
+admin.site.register(AreaComun)
+admin.site.register(Suministro)
+admin.site.register(Reserva)
+admin.site.register(ReservaSuministro)
