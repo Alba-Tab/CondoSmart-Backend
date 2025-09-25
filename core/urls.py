@@ -10,7 +10,7 @@ urlpatterns = [
     path("", include("reservations.urls")),
     path("", include("finance.urls")),
     path("", include("communication.urls")),
-    #path("", include("maintenance.urls")),
+    path("", include("maintenance.urls")),
     #path("", include("reports.urls")),
     
     path("router/", include(router.urls)),  # opcional para inspección
