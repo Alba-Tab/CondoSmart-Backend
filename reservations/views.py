@@ -1,7 +1,8 @@
 from rest_framework import viewsets
 from django_filters import rest_framework as filters
-from core.permissions import IsAuth
+from core.permissions import IsAuth, AlcancePermission
 from core.pagination import DefaultPagination
+from core.mixins import AlcanceViewSetMixin
 from .models import AreaComun, Reserva, ReservaSuministro, Suministro
 from .serializers import AreaComunSerializer, ReservaSerializer, ReservaSuministroSerializer, SuministroSerializer
 
@@ -23,14 +24,15 @@ class AreaComunViewSet(viewsets.ModelViewSet):
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
 
-class ReservaViewSet(viewsets.ModelViewSet):
+class ReservaViewSet(AlcanceViewSetMixin):
     queryset = Reserva.objects.select_related("unidad","area")
     serializer_class = ReservaSerializer
-    permission_classes = [IsAuth]
+    permission_classes = [IsAuth, AlcancePermission]
     filterset_class = ReservaFilter
     search_fields = ["notas"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
+    scope_field = "unidad"
 
 class SuministroViewSet(viewsets.ModelViewSet):
     queryset = Suministro.objects.all()
@@ -41,10 +43,11 @@ class SuministroViewSet(viewsets.ModelViewSet):
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
     
-class ReservaSuministroViewSet(viewsets.ModelViewSet):
+class ReservaSuministroViewSet(AlcanceViewSetMixin):
     queryset = ReservaSuministro.objects.select_related("reserva","suministro")
     serializer_class = ReservaSuministroSerializer
-    permission_classes = [IsAuth]
+    permission_classes = [IsAuth, AlcancePermission]
     filterset_fields = ["reserva","suministro","cantidad"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
+    scope_field = "reserva__unidad"

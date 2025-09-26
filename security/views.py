@@ -1,7 +1,8 @@
 from rest_framework import viewsets
 from django_filters import rest_framework as filters
-from core.permissions import IsAuth
+from core.permissions import IsAuth, AlcancePermission
 from core.pagination import DefaultPagination
+from core.mixins import AlcanceViewSetMixin
 from .models import Visita, Acceso, Incidente
 from .serializers import VisitaSerializer, AccesoSerializer, IncidenteSerializer
 
@@ -22,20 +23,28 @@ class VisitaViewSet(viewsets.ModelViewSet):
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
 
-class AccesoViewSet(viewsets.ModelViewSet):
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.user.is_staff:
+            return qs
+        return qs.filter(user=self.request.user)
+
+class AccesoViewSet(AlcanceViewSetMixin):
     queryset = Acceso.objects.select_related("unidad","visita")
     serializer_class = AccesoSerializer
-    permission_classes = [IsAuth]
+    permission_classes = [IsAuth, AlcancePermission]
     filterset_class = AccesoFilter
     search_fields = ["visita__nombre","visita__documento","modo","tipo","sentido"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
+    scope_field = "unidad"
 
-class IncidenteViewSet(viewsets.ModelViewSet):
+class IncidenteViewSet(AlcanceViewSetMixin):
     queryset = Incidente.objects.select_related("unidad")
     serializer_class = IncidenteSerializer
-    permission_classes = [IsAuth]
+    permission_classes = [IsAuth, AlcancePermission]
     filterset_fields = ["unidad","user","estado","created_at","updated_at"]
     search_fields = ["titulo","descripcion"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
+    scope_field = "unidad"

@@ -9,6 +9,7 @@ class HealthView(APIView):
     
     permission_classes = [AllowAny]
     authentication_classes = [] 
+    
     def get(self, request):
         return Response({
             "status": "ok",

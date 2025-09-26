@@ -5,6 +5,8 @@ from core.pagination import DefaultPagination
 from .models import Servicio, TicketMantenimiento, TarifaServicio
 from .serializers import ServicioSerializer, TicketMantenimientoSerializer, TarifaServicioSerializer
 from django.db.models import Q
+from core.mixins import AlcanceViewSetMixin
+from core.permissions import AlcancePermission
 
 class TicketFilter(filters.FilterSet):
     # Por qué: alias legibles para rangos y nulos
@@ -43,14 +45,15 @@ class ServicioViewSet(viewsets.ModelViewSet):
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
 
-class TicketMantenimientoViewSet(viewsets.ModelViewSet):
+class TicketMantenimientoViewSet(AlcanceViewSetMixin):
     queryset = TicketMantenimiento.objects.select_related("unidad","servicio")
     serializer_class = TicketMantenimientoSerializer
-    permission_classes = [IsAuth]
+    permission_classes = [IsAuth, AlcancePermission]
     filterset_class = TicketFilter
     search_fields = ["titulo","descripcion"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
+    scope_field = "unidad"
 
 class TarifaServicioViewSet(viewsets.ModelViewSet):
     queryset = TarifaServicio.objects.select_related("servicio")

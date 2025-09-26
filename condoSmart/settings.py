@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+    'rest_framework_simplejwt.token_blacklist',
     "rest_framework",
     "django_filters",
     "core",
@@ -64,6 +64,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "core.middleware.UserMiddleware",
 ]
 
 ROOT_URLCONF = 'condoSmart.urls'
@@ -117,7 +118,7 @@ DATABASES = {
         'PORT': os.getenv("DB_PORT","5432"),
         'CONN_MAX_AGE': int(os.getenv("DB_CONN_MAX_AGE", 60)),
         'OPTIONS': {
-            'sslmode': 'require',  # RDS exige SSL
+            'sslmode': os.getenv("DB_SSLMODE","require"),  # RDS exige SSL
         },
     }
 }

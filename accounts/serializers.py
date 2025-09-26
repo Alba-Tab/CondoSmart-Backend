@@ -1,16 +1,20 @@
 from rest_framework import serializers
-from .models import CustomUser, Rol
+from django.contrib.auth.models import Group
+from .models import CustomUser
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=False)
-
+    groups = serializers.SlugRelatedField(
+        many=True, slug_field="name", queryset=Group.objects.all()
+    )
     class Meta:
         model = CustomUser
         fields = ["pk","username","password","first_name","last_name","email",
-                  "ci","phone","is_active","is_staff"]
-        read_only_fields = ["is_staff"] 
+                  "ci","phone","is_active","groups","is_staff"]
+        read_only_fields = ("created_by",)
 
     def create(self, validated_data):
+        groups = validated_data.pop("groups", [])
         password = validated_data.pop("password", None)
         user = CustomUser(**validated_data)
         if password:
@@ -18,6 +22,8 @@ class UserSerializer(serializers.ModelSerializer):
         else:
             user.set_unusable_password()
         user.save()
+        if groups:
+            user.groups.set(groups)
         return user
 
     def update(self, instance, validated_data):
@@ -29,13 +35,8 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-
-class RolSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Rol
-        fields = "__all__"    
-
 class MeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ["pk","username","ci","first_name","last_name","email","phone","is_active"]
+        read_only_fields = ("created_by", "updated_by")
