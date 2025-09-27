@@ -4,7 +4,8 @@ from core.models import TimeStampedBy
 class Unidad(TimeStampedBy):
     code = models.CharField(max_length=32)
     is_active = models.BooleanField(default=True)
-    user = models.ForeignKey("accounts.CustomUser", on_delete=models.PROTECT, related_name="duenno", null=True, blank=True)
+    user = models.ForeignKey("accounts.CustomUser", on_delete=models.PROTECT, 
+                             related_name="duenno", null=True, blank=True)
 
     def __str__(self):
         owner = self.user or "sin dueño"
@@ -17,16 +18,17 @@ class Residency(TimeStampedBy):
     
     user = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE, related_name="residencias")
     unidad = models.ForeignKey(Unidad, on_delete=models.CASCADE, related_name="residentes")
-    is_owner = models.BooleanField(default=False)
     tipo_ocupacion = models.CharField(max_length=16, choices=TIPO, default="propietario")
     status = models.CharField(max_length=16, choices=STATUS, default="activa")
+    is_owner = models.BooleanField(default=False)
     start = models.DateField()
     end = models.DateField(null=True, blank=True)
+    
     class Meta:
         indexes = [models.Index(fields=["unidad","user","status"])]
         unique_together = [("user","unidad","start")] 
     def __str__(self): 
-        return f"{self.user.id}@{self.unidad.pk}"
+        return f"{self.user.username}@{self.unidad.code} ({self.tipo_ocupacion})"
     
 
 class Vehiculo(TimeStampedBy):
@@ -50,7 +52,7 @@ class Mascota(TimeStampedBy):
     unidad = models.ForeignKey(Unidad, on_delete=models.SET_NULL, related_name="mascotas", null=True, blank=True)
     responsable = models.ForeignKey("accounts.CustomUser", on_delete=models.SET_NULL, related_name="mascotas", null=True, blank=True)
     def __str__(self): 
-        return f"{self.nombre} ({self.tipo} {self.raza})"
+        return f"{self.nombre} ({self.tipo} {self.raza}) Dueño : {self.responsable.first_name}" # type: ignore
     
 class Contrato (TimeStampedBy):
     unidad = models.ForeignKey(Unidad, on_delete=models.CASCADE, related_name="contratos")
@@ -65,4 +67,4 @@ class Contrato (TimeStampedBy):
     
     class Meta:
         indexes = [models.Index(fields=["unidad","inquilino","is_active"])]
-    def __str__(self): return f"C-{self.pk}@{self.unidad.pk}"
+    def __str__(self): return f"C-{self.pk} Unidad: {self.unidad.code}" 

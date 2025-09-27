@@ -7,7 +7,7 @@ from .serializers import ServicioSerializer, TicketMantenimientoSerializer, Tari
 from django.db.models import Q
 from core.mixins import AlcanceViewSetMixin
 from core.permissions import AlcancePermission
-
+from core.views import BaseViewSet
 class TicketFilter(filters.FilterSet):
     # Por qué: alias legibles para rangos y nulos
     programado_gte = filters.DateTimeFilter(field_name="programado", lookup_expr="gte")
@@ -36,7 +36,7 @@ class TarifaFilter(filters.FilterSet):
         model = TarifaServicio
         fields = ["servicio","vigente_desde_gte","vigente_desde_lte","vigente_hasta_isnull","vigente_en"]
 
-class ServicioViewSet(viewsets.ModelViewSet):
+class ServicioViewSet(BaseViewSet):
     queryset = Servicio.objects.all()
     serializer_class = ServicioSerializer
     permission_classes = [IsAuth]
@@ -55,7 +55,7 @@ class TicketMantenimientoViewSet(AlcanceViewSetMixin):
     pagination_class = DefaultPagination
     scope_field = "unidad"
 
-class TarifaServicioViewSet(viewsets.ModelViewSet):
+class TarifaServicioViewSet(BaseViewSet):
     queryset = TarifaServicio.objects.select_related("servicio")
     serializer_class = TarifaServicioSerializer
     permission_classes = [IsAuth]

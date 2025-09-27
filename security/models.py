@@ -5,12 +5,12 @@ class Visita(TimeStampedBy):
     nombre = models.CharField(max_length=120)
     documento = models.CharField(max_length=32)
     telefono = models.CharField(max_length=24, blank=True)
-    
     user = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE, related_name="visitas")
+    
     class Meta:
         indexes = [models.Index(fields=["documento"])]
     def __str__(self) -> str:
-        return f"{self.nombre} ({self.documento}) visita de U{self.user.username}"
+        return f"{self.nombre} ({self.documento}) visita de U{self.user.first_name}"
 
 class Acceso(TimeStampedBy):
     METODOS = [("manual","manual"),("placas","placas"),("face","face")]
@@ -29,7 +29,7 @@ class Acceso(TimeStampedBy):
     class Meta:
         indexes = [models.Index(fields=["unidad","fecha"])]
     def __str__(self) -> str:
-        return f"{self.tipo}:{self.modo}@U{self.unidad.id} {self.fecha.isoformat()}"
+        return f"{self.tipo}:{self.modo}@U{self.unidad.code} {self.fecha.isoformat()}"
 
 class Incidente(TimeStampedBy):
     ESTADO = [("abierto","abierto"),("en_progreso","en_progreso"),("cerrado","cerrado")]
@@ -43,4 +43,4 @@ class Incidente(TimeStampedBy):
     class Meta:
         indexes = [models.Index(fields=["unidad","estado","created_at"])]
     def __str__(self) -> str:
-        return f"I{self.pk}:{self.estado}@U{self.unidad.id}"
+        return f"I{self.titulo}:{self.estado}@U{self.unidad.code}"

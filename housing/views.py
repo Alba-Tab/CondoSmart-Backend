@@ -1,10 +1,9 @@
-from rest_framework import viewsets
 from .models import Unidad, Residency, Vehiculo, Mascota, Contrato
 from .serializers import UnidadSerializer, ResidencySerializer, VehiculoSerializer, MascotaSerializer, ContratoSerializer
 from core.permissions import IsAuth, AlcancePermission
 from core.pagination import DefaultPagination
 from core.mixins import AlcanceViewSetMixin
-
+from core.views import BaseViewSet
 class UnidadViewSet(AlcanceViewSetMixin):
     queryset = Unidad.objects.all()
     serializer_class = UnidadSerializer
@@ -24,7 +23,7 @@ class ResidencyViewSet(AlcanceViewSetMixin):
     pagination_class = DefaultPagination
     scope_field = "unidad"
 
-class VehiculoViewSet(viewsets.ModelViewSet):
+class VehiculoViewSet(BaseViewSet):
     queryset = Vehiculo.objects.select_related("unidad","responsable")
     serializer_class = VehiculoSerializer
     permission_classes = [IsAuth, AlcancePermission]
@@ -38,7 +37,7 @@ class VehiculoViewSet(viewsets.ModelViewSet):
             return qs
         return qs.filter(responsable=self.request.user)
     
-class MascotaViewSet(viewsets.ModelViewSet):
+class MascotaViewSet(BaseViewSet):
     queryset = Mascota.objects.select_related("unidad","responsable")
     serializer_class = MascotaSerializer
     permission_classes = [IsAuth, AlcancePermission]

@@ -1,10 +1,10 @@
-from rest_framework import viewsets
 from django_filters import rest_framework as filters
 from core.permissions import IsAuth, AlcancePermission
 from core.pagination import DefaultPagination
 from core.mixins import AlcanceViewSetMixin
 from .models import AreaComun, Reserva, ReservaSuministro, Suministro
 from .serializers import AreaComunSerializer, ReservaSerializer, ReservaSuministroSerializer, SuministroSerializer
+from core.views import BaseViewSet
 
 class ReservaFilter(filters.FilterSet):
     start_gte = filters.DateTimeFilter(field_name="start", lookup_expr="gte")
@@ -15,7 +15,7 @@ class ReservaFilter(filters.FilterSet):
         model = Reserva
         fields = ["unidad","area","status","start_gte","start_lte","end_gte","end_lte"]
 
-class AreaComunViewSet(viewsets.ModelViewSet):
+class AreaComunViewSet(BaseViewSet):
     queryset = AreaComun.objects.all()
     serializer_class = AreaComunSerializer
     permission_classes = [IsAuth]
@@ -34,7 +34,7 @@ class ReservaViewSet(AlcanceViewSetMixin):
     pagination_class = DefaultPagination
     scope_field = "unidad"
 
-class SuministroViewSet(viewsets.ModelViewSet):
+class SuministroViewSet(BaseViewSet):
     queryset = Suministro.objects.all()
     serializer_class = SuministroSerializer
     permission_classes = [IsAuth]

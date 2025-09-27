@@ -1,10 +1,10 @@
-from rest_framework import viewsets
 from django_filters import rest_framework as filters
 from core.permissions import IsAuth, AlcancePermission
 from core.pagination import DefaultPagination
 from .models import Cargo, Pago, PagoCargo
 from .serializers import CargoSerializer, PagoSerializer, PagoCargoSerializer
 from core.mixins import AlcanceViewSetMixin
+from core.views import BaseViewSet
 
 class PagoFilter(filters.FilterSet):
     # aliases amigables
@@ -24,7 +24,7 @@ class CargoViewSet(AlcanceViewSetMixin):
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
 
-class PagoViewSet(viewsets.ModelViewSet):
+class PagoViewSet(BaseViewSet):
     queryset = Pago.objects.all()
     serializer_class = PagoSerializer
     permission_classes = [IsAuth]

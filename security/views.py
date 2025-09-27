@@ -1,10 +1,10 @@
-from rest_framework import viewsets
 from django_filters import rest_framework as filters
 from core.permissions import IsAuth, AlcancePermission
 from core.pagination import DefaultPagination
 from core.mixins import AlcanceViewSetMixin
 from .models import Visita, Acceso, Incidente
 from .serializers import VisitaSerializer, AccesoSerializer, IncidenteSerializer
+from core.views import BaseViewSet
 
 class AccesoFilter(filters.FilterSet):
     fecha_gte = filters.DateTimeFilter(field_name="fecha", lookup_expr="gte")
@@ -14,7 +14,7 @@ class AccesoFilter(filters.FilterSet):
         model = Acceso
         fields = ["unidad","tipo","modo","sentido","fecha","fecha_gte","fecha_lte","fecha_exacta"]
 
-class VisitaViewSet(viewsets.ModelViewSet):
+class VisitaViewSet(BaseViewSet):
     queryset = Visita.objects.all()
     serializer_class = VisitaSerializer
     permission_classes = [IsAuth]

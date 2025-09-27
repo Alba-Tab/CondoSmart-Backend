@@ -2,7 +2,6 @@ from django.db import models
 from core.models import TimeStampedBy
 
 class Comunicado(TimeStampedBy):
-    """Anuncio global. Se publica una vez."""
     titulo = models.CharField(max_length=160)
     cuerpo = models.TextField()
     publicado_at = models.DateTimeField(null=True, blank=True)  
@@ -13,8 +12,8 @@ class Comunicado(TimeStampedBy):
         return f"{self.titulo}"
 
 class Notificacion(TimeStampedBy):
-    """Push directo a un usuario. Puede enlazar un comunicado."""
-    TIPO = [("deuda","deuda"),("multa","multa"),("evento","evento"),("otro","otro")]
+    TIPO = [("deuda","deuda"),("multa","multa"),("evento","evento"),("comunicado","comunicado"),("otro","otro")]
+    
     user = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE, related_name="notificaciones")
     comunicado = models.ForeignKey(Comunicado, null=True, blank=True, on_delete=models.SET_NULL, related_name="notificaciones")
     tipo = models.CharField(max_length=32, blank=True, choices=TIPO) 

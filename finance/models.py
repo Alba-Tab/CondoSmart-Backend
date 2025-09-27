@@ -19,6 +19,7 @@ class Cargo(TimeStampedBy):
 class Pago(TimeStampedBy):
     ESTADO = [("pendiente","pendiente"),("confirmado","confirmado"),("fallido","fallido")]
     METODO = [("efectivo","efectivo"),("tarjeta","tarjeta"),("transferencia","transferencia"),("otro","otro")]
+    
     user = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE, related_name="user")
     fecha = models.DateField()
     monto_total = models.DecimalField(max_digits=10, decimal_places=2)

@@ -20,6 +20,7 @@ class TicketMantenimiento(TimeStampedBy):
     estado = models.CharField(max_length=16, choices=ESTADO, default="abierto")
     programado = models.DateTimeField(null=True, blank=True) 
     cerrado = models.DateTimeField(null=True, blank=True)
+    
     class Meta:
         indexes = [
             models.Index(fields=["unidad","estado"]),
@@ -28,6 +29,7 @@ class TicketMantenimiento(TimeStampedBy):
         ]
     def __str__(self) -> str:
         return f"T{self.pk}:{self.titulo[:20]}"
+    
 class TarifaServicio(TimeStampedBy):
     servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name="tarifas")
     descripcion = models.CharField(max_length=160, blank=True)

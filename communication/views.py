@@ -1,4 +1,3 @@
-from rest_framework import viewsets
 from django_filters import rest_framework as filters
 from core.permissions import IsAuth
 from core.pagination import DefaultPagination
@@ -6,7 +5,8 @@ from .models import Comunicado, Notificacion
 from .serializers import ComunicadoSerializer, NotificacionSerializer
 from rest_framework import decorators, response, status
 from django.utils import timezone
-    
+from core.views import BaseViewSet
+
 class ComunicadoFilter(filters.FilterSet):
     publicado_gte = filters.DateTimeFilter(field_name="publicado_at", lookup_expr="gte")
     publicado_lte = filters.DateTimeFilter(field_name="publicado_at", lookup_expr="lte")
@@ -14,7 +14,7 @@ class ComunicadoFilter(filters.FilterSet):
         model = Comunicado
         fields = ["publicado_gte","publicado_lte"]
 
-class ComunicadoViewSet(viewsets.ModelViewSet):
+class ComunicadoViewSet(BaseViewSet):
     queryset = Comunicado.objects.all()
     serializer_class = ComunicadoSerializer
     permission_classes = [IsAuth]
@@ -31,7 +31,7 @@ class NotificacionFilter(filters.FilterSet):
         model = Notificacion
         fields = ["user","comunicado","publicado_gte","publicado_lte","leido_isnull"]
 
-class NotificacionViewSet(viewsets.ModelViewSet):
+class NotificacionViewSet(BaseViewSet):
     queryset = Notificacion.objects.select_related("user","comunicado")
     serializer_class = NotificacionSerializer
     permission_classes = [IsAuth]

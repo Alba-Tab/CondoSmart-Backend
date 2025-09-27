@@ -1,9 +1,9 @@
 from django.contrib.auth import update_session_auth_hash
-from rest_framework import status
-from rest_framework import viewsets
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from core.permissions import IsAuth, IsAdmin
+from rest_framework.views import APIView
+from rest_framework import status
+from core.permissions import IsAuth
+from core.views import BaseViewSet
 from .models import CustomUser
 from .serializers import UserSerializer, MeSerializer
 
@@ -12,15 +12,13 @@ class MeView(APIView):
     def get(self, request):
         return Response(MeSerializer(request.user).data)
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(BaseViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuth]
     filterset_fields = ["is_active", "ci"]
     search_fields = ["username", "ci", "first_name", "last_name"]
     ordering_fields = "__all__"
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
         
     def get_queryset(self):
         user = self.request.user
@@ -28,7 +26,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return CustomUser.objects.all()
         else:
             return CustomUser.objects.filter(pk=user.pk)
-         
+        
 class ChangePasswordView(APIView):
     permission_classes = [IsAuth]
 

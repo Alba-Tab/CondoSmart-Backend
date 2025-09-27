@@ -1,9 +1,8 @@
 from django.db import models
 from core.middleware import get_user
 from rest_framework import viewsets
-
+from core.views import BaseViewSet
 class AuditSaveMixin(models.Model):
-    """Mixin para guardar automáticamente created_by y updated_by."""
     class Meta:
         abstract = True
 
@@ -18,7 +17,7 @@ class AuditSaveMixin(models.Model):
 
         super().save(*args, **kwargs)
         
-class AlcanceViewSetMixin(viewsets.ModelViewSet):
+class AlcanceViewSetMixin(BaseViewSet):
     """
     Filtra querysets a las unidades donde el usuario tiene derecho de acceso.
     - superuser / staff -> ven todo
