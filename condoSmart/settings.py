@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "communication",
     "maintenance",
     "reports",
+    "storages",
 ]
 
 MIDDLEWARE = [
@@ -168,3 +169,13 @@ SECURE_SSL_REDIRECT = not DEBUG
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
+
+#en C2 esto se puede omitir y solo agregar el sol iam a c2
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+#obligatorio
+AWS_STORAGE_BUCKET_NAME = "condosmart-evidencias"
+AWS_S3_REGION_NAME = "us-east-2" 
+
+# Hace que FileField de Django use S3 automáticamente
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"

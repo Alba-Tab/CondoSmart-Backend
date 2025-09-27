@@ -6,7 +6,7 @@ class Visita(TimeStampedBy):
     documento = models.CharField(max_length=32)
     telefono = models.CharField(max_length=24, blank=True)
     user = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE, related_name="visitas")
-    
+    photo_key = models.CharField(max_length=255, blank=True) 
     class Meta:
         indexes = [models.Index(fields=["documento"])]
     def __str__(self) -> str:
@@ -25,7 +25,7 @@ class Acceso(TimeStampedBy):
     sentido = models.CharField(max_length=16, choices=SENTIDOS, default="in")
     tipo = models.CharField(max_length=16, choices=TIPOS, default="visita")
     fecha = models.DateTimeField(auto_now_add=True) 
-    evidencia_s3 = models.CharField(max_length=256, blank=True)  # key/URL a evidencia
+    evidencia_key = models.CharField(max_length=256, blank=True)  
     class Meta:
         indexes = [models.Index(fields=["unidad","fecha"])]
     def __str__(self) -> str:

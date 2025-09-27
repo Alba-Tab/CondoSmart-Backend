@@ -25,7 +25,7 @@ class Pago(TimeStampedBy):
     monto_total = models.DecimalField(max_digits=10, decimal_places=2)
     estado = models.CharField(max_length=16, choices=ESTADO, default="pendiente")
     metodo = models.CharField(max_length=64, choices=METODO, default="efectivo")
-    evidencia_s3 = models.CharField(max_length=128, blank=True) 
+    comprobante_key = models.CharField(max_length=128, blank=True) 
     observacion = models.TextField(blank=True)
     def __str__(self): return f"P{self.pk} U{self.user.id} ${self.monto_total}"
     

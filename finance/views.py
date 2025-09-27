@@ -13,7 +13,7 @@ class PagoFilter(filters.FilterSet):
 
     class Meta:
         model = Pago
-        fields = ["user", "estado", "fecha_gte", "fecha_lte", "evidencia_s3"]
+        fields = ["user", "estado", "fecha_gte", "fecha_lte", "comprobante_key"]
         
 class CargoViewSet(AlcanceViewSetMixin):
     queryset = Cargo.objects.all()
