@@ -13,7 +13,7 @@ class Visita(TimeStampedBy):
         return f"{self.nombre} ({self.documento}) visita de U{self.user.first_name}"
 
 class Acceso(TimeStampedBy):
-    METODOS = [("manual","manual"),("placas","placas"),("face","face")]
+    METODOS = [("manual","manual"),("modelo","modelo")]
     SENTIDOS = [("in","in"),("out","out")]
     TIPOS = [("visita","visita"),("vehiculo","vehiculo"),("residente","residente")]
     
@@ -21,11 +21,14 @@ class Acceso(TimeStampedBy):
     visita = models.ForeignKey(Visita, null=True, blank=True, on_delete=models.SET_NULL, related_name="accesos")
     user = models.ForeignKey("accounts.CustomUser", null=True, blank=True, on_delete=models.SET_NULL, related_name="accesos")
     vehiculo = models.ForeignKey("housing.Vehiculo", null=True, blank=True, on_delete=models.SET_NULL, related_name="accesos")
+    
     modo = models.CharField(max_length=16, choices=METODOS, default="manual")  
     sentido = models.CharField(max_length=16, choices=SENTIDOS, default="in")
     tipo = models.CharField(max_length=16, choices=TIPOS, default="visita")
     fecha = models.DateTimeField(auto_now_add=True) 
-    evidencia_key = models.CharField(max_length=256, blank=True)  
+    match = models.BooleanField(default=False)
+    permitido = models.BooleanField(default=False)
+    evidencia_s3 = models.CharField(max_length=256, blank=True)
     class Meta:
         indexes = [models.Index(fields=["unidad","fecha"])]
     def __str__(self) -> str:
