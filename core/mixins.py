@@ -1,21 +1,5 @@
-from django.db import models
-from core.middleware import get_user
-from rest_framework import viewsets
 from core.views import BaseViewSet
-class AuditSaveMixin(models.Model):
-    class Meta:
-        abstract = True
 
-    def save(self, *args, **kwargs):
-        user = get_user()
-        print("DEBUG user en AuditSaveMixin:", user)
-        if user and getattr(user, "is_authenticated", False):
-            # Superuser y staff también son usuarios válidos
-            if not getattr(self, "created_by_id", None):
-                self.created_by = user
-            self.updated_by = user
-
-        super().save(*args, **kwargs)
         
 class AlcanceViewSetMixin(BaseViewSet):
     """
