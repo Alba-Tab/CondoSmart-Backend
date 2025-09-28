@@ -25,7 +25,7 @@ class CargoViewSet(AlcanceViewSetMixin):
     pagination_class = DefaultPagination
 
 class PagoViewSet(BaseViewSet):
-    queryset = Pago.objects.all()
+    queryset = Pago.objects.select_related("user")
     serializer_class = PagoSerializer
     permission_classes = [IsAuth]
     filterset_class = PagoFilter

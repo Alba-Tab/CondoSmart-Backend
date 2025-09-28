@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import Group
 from .models import CustomUser
-from core.services import upload_file, get_presigned_url
+from core.services import upload_fileobj, get_presigned_url
 import uuid, os
 
 class UserSerializer(serializers.ModelSerializer):
@@ -26,32 +26,31 @@ class UserSerializer(serializers.ModelSerializer):
         groups = validated_data.pop("groups", [])
         password = validated_data.pop("password", None)
         photo = validated_data.pop("photo", None)
+
         user = CustomUser(**validated_data)
         if password:
             user.set_password(password)
         else:
             user.set_unusable_password()
         user.save()
+
         if groups:
             user.groups.set(groups)
+
         if photo:
-            tmp_path = f"/tmp/{uuid.uuid4()}.jpg"
-            with open(tmp_path, "wb+") as dest:
-                for chunk in photo.chunks():
-                    dest.write(chunk)
-
-            key = f"usuarios/{user.pk}/foto.jpg"
-            upload_file(tmp_path, key)
-            os.remove(tmp_path)
-
+            key = f"usuarios/{user.pk}/foto_{uuid.uuid4()}.jpg"
+            upload_fileobj(photo, key) 
             user.photo_key = key
-            user.save()  # Guarda el cambio de photo_key
+            user.save()
+
         return user
 
     def update(self, instance, validated_data):
+
         password = validated_data.pop("password", None)
         photo = validated_data.pop("photo", None)
 
+        # Actualiza los demás campos
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
@@ -60,16 +59,10 @@ class UserSerializer(serializers.ModelSerializer):
 
         instance.save()
 
+        # Manejo de foto
         if photo:
-            tmp_path = f"/tmp/{uuid.uuid4()}.jpg"
-            with open(tmp_path, "wb+") as dest:
-                for chunk in photo.chunks():
-                    dest.write(chunk)
-
-            key = f"usuarios/{instance.pk}/foto.jpg"
-            upload_file(tmp_path, key)
-            os.remove(tmp_path)
-
+            key = f"usuarios/{instance.pk}/foto_{uuid.uuid4()}.jpg"
+            upload_fileobj(photo, key)
             instance.photo_key = key
             instance.save()
 

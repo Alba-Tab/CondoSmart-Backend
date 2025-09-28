@@ -1,8 +1,7 @@
 from rest_framework import serializers
-from core.services import upload_file, get_presigned_url
-from .models import Visita, Acceso, Incidente
-from core.services import get_presigned_url
+from core.services import upload_fileobj, upload_file, get_presigned_url
 import uuid, os
+from .models import Visita, Acceso, Incidente
 
 class VisitaSerializer(serializers.ModelSerializer):
     # Campo solo para recibir archivo en POST
@@ -12,7 +11,10 @@ class VisitaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Visita
-        fields = ["id", "nombre", "documento", "telefono", "user", "photo_key", "foto", "foto_url"]
+        fields = [
+            "id", "nombre", "documento", "telefono",
+            "user", "photo_key", "foto", "foto_url"
+        ]
         read_only_fields = ["photo_key"]
 
     def create(self, validated_data):
@@ -20,24 +22,32 @@ class VisitaSerializer(serializers.ModelSerializer):
         visita = super().create(validated_data)
 
         if foto:
-            tmp_path = f"/tmp/{uuid.uuid4()}.jpg"
-            with open(tmp_path, "wb+") as dest:
-                for chunk in foto.chunks():
-                    dest.write(chunk)
-
-            key = f"visitas/{visita.id}/foto.jpg"
-            upload_file(tmp_path, key)
-            os.remove(tmp_path)
-
+            key = f"visitas/{visita.id}/foto_{uuid.uuid4()}.jpg"
+            upload_fileobj(foto, key)   # directo, sin /tmp
             visita.photo_key = key
             visita.save()
 
         return visita
 
+    def update(self, instance, validated_data):
+        foto = validated_data.pop("foto", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if foto:
+            key = f"visitas/{instance.id}/foto_{uuid.uuid4()}.jpg"
+            upload_fileobj(foto, key)
+            instance.photo_key = key
+
+        instance.save()
+        return instance
+
     def get_foto_url(self, obj):
         if obj.photo_key:
             return get_presigned_url(obj.photo_key, expires_in=300)
         return None
+
 
 class AccesoSerializer(serializers.ModelSerializer):
     evidencia = serializers.ImageField(write_only=True, required=False)
@@ -58,19 +68,26 @@ class AccesoSerializer(serializers.ModelSerializer):
         acceso = super().create(validated_data)
 
         if evidencia:
-            tmp_path = f"/tmp/{uuid.uuid4()}.jpg"
-            with open(tmp_path, "wb+") as dest:
-                for chunk in evidencia.chunks():
-                    dest.write(chunk)
-
             key = f"accesos/{acceso.unidad_id}/{uuid.uuid4()}.jpg"
-            upload_file(tmp_path, key)
-            os.remove(tmp_path)
-
+            upload_fileobj(evidencia, key)   # directo en memoria
             acceso.evidencia_s3 = key
             acceso.save()
 
         return acceso
+
+    def update(self, instance, validated_data):
+        evidencia = validated_data.pop("evidencia", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if evidencia:
+            key = f"accesos/{instance.unidad_id}/{uuid.uuid4()}.jpg"
+            upload_fileobj(evidencia, key)
+            instance.evidencia_s3 = key
+
+        instance.save()
+        return instance
 
     def get_evidencia_url(self, obj):
         if obj.evidencia_s3:
@@ -94,19 +111,26 @@ class IncidenteSerializer(serializers.ModelSerializer):
         incidente = super().create(validated_data)
 
         if evidencia:
-            tmp_path = f"/tmp/{uuid.uuid4()}.jpg"
-            with open(tmp_path, "wb+") as dest:
-                for chunk in evidencia.chunks():
-                    dest.write(chunk)
-
             key = f"incidentes/{incidente.unidad_id}/{uuid.uuid4()}.jpg"
-            upload_file(tmp_path, key)
-            os.remove(tmp_path)
-
+            upload_fileobj(evidencia, key)   # directo en memoria
             incidente.evidencia_s3 = key
             incidente.save()
 
         return incidente
+
+    def update(self, instance, validated_data):
+        evidencia = validated_data.pop("evidencia", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if evidencia:
+            key = f"incidentes/{instance.unidad_id}/{uuid.uuid4()}.jpg"
+            upload_fileobj(evidencia, key)
+            instance.evidencia_s3 = key
+
+        instance.save()
+        return instance
 
     def get_evidencia_url(self, obj):
         if obj.evidencia_s3:

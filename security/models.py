@@ -13,7 +13,7 @@ class Visita(TimeStampedBy):
         return f"{self.nombre} ({self.documento}) visita de U{self.user.first_name}"
 
 class Acceso(TimeStampedBy):
-    METODOS = [("manual","manual"),("modelo","modelo")]
+    MODO = [("manual", "manual"),("face", "face"),("placas", "placas")]
     SENTIDOS = [("in","in"),("out","out")]
     TIPOS = [("visita","visita"),("vehiculo","vehiculo"),("residente","residente")]
     
@@ -22,17 +22,17 @@ class Acceso(TimeStampedBy):
     user = models.ForeignKey("accounts.CustomUser", null=True, blank=True, on_delete=models.SET_NULL, related_name="accesos")
     vehiculo = models.ForeignKey("housing.Vehiculo", null=True, blank=True, on_delete=models.SET_NULL, related_name="accesos")
     
-    modo = models.CharField(max_length=16, choices=METODOS, default="manual")  
+    modo = models.CharField(max_length=16, choices=MODO, default="manual")  
     sentido = models.CharField(max_length=16, choices=SENTIDOS, default="in")
     tipo = models.CharField(max_length=16, choices=TIPOS, default="visita")
     fecha = models.DateTimeField(auto_now_add=True) 
     match = models.BooleanField(default=False)
     permitido = models.BooleanField(default=False)
-    evidencia_s3 = models.CharField(max_length=256, blank=True)
+    evidencia_s3 = models.CharField(max_length=256, blank=True, null=True)
     class Meta:
         indexes = [models.Index(fields=["unidad","fecha"])]
     def __str__(self) -> str:
-        return f"{self.tipo}:{self.modo}@U{self.unidad.code} {self.fecha.isoformat()}"
+        return f"{self.tipo}:{self.sentido} en modo {self.modo} hacia @U{self.unidad.code} {self.fecha.isoformat()}"
 
 class Incidente(TimeStampedBy):
     ESTADO = [("abierto","abierto"),("en_progreso","en_progreso"),("cerrado","cerrado")]
