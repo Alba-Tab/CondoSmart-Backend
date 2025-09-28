@@ -38,8 +38,8 @@ class UserSerializer(serializers.ModelSerializer):
             user.groups.set(groups)
 
         if photo:
-            key = f"usuarios/{user.pk}/foto_{uuid.uuid4()}.jpg"
-            upload_fileobj(photo, key) 
+            key = f"usuarios/{user.pk}/user_{uuid.uuid4()}.jpg"
+            upload_fileobj(photo, key)
             user.photo_key = key
             user.save()
             index_face(key, external_id=f"user_{user.pk}")
@@ -50,7 +50,6 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop("password", None)
         photo = validated_data.pop("photo", None)
 
-        # Actualiza los demás campos
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
@@ -59,20 +58,26 @@ class UserSerializer(serializers.ModelSerializer):
 
         if password:
             instance.set_password(password)
+            
+        is_deleted_changed = "is_deleted" in validated_data 
+        was_deleted = getattr(instance, "is_deleted", False) # estado previo
+        will_be_deleted = validated_data.get("is_deleted", was_deleted) # estado nuevo
 
-        instance.save()
-
-        # Manejo de foto
         if photo:
-            key = f"usuarios/{instance.pk}/foto_{uuid.uuid4()}.jpg"
+            key = f"usuarios/{instance.pk}/user_{uuid.uuid4()}.jpg"
             upload_fileobj(photo, key)
             instance.photo_key = key
-            instance.save()
             delete_faces_by_external_id(f"user_{instance.pk}")
             index_face(key, f"user_{instance.pk}")
+        elif is_deleted_changed:
+            if will_be_deleted:
+                delete_faces_by_external_id(f"user_{instance.pk}")
+            elif was_deleted and not will_be_deleted and instance.photo_key:
+                index_face(instance.photo_key, f"user_{instance.pk}")
 
+        instance.save()
         return instance
-    
+        
     def get_photo_url(self, obj):
         if obj.photo_key:
             return get_presigned_url(obj.photo_key, expires_in=300)

@@ -2,8 +2,9 @@ from django.contrib.auth import update_session_auth_hash
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from core.permissions import IsAuth, IsAdmin
+from core.permissions import IsAuth
 from core.views import BaseViewSet
+from core.services import delete_faces_by_external_id
 from .models import CustomUser
 from .serializers import UserSerializer, MeSerializer
 
@@ -26,6 +27,12 @@ class UserViewSet(BaseViewSet):
             return CustomUser.objects.all()
         else:
             return CustomUser.objects.filter(pk=user.pk)
+        
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete(user=request.user)
+        delete_faces_by_external_id(f"user_{instance.id}")
+        return Response(status=204)
         
 class ChangePasswordView(APIView):
     permission_classes = [IsAuth]

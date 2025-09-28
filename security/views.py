@@ -6,7 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from core.permissions import IsAuth, AlcancePermission
 from core.pagination import DefaultPagination
-from core.services import upload_fileobj, get_presigned_url, search_face, detect_plate
+from core.services import delete_faces_by_external_id
 from core.mixins import AlcanceViewSetMixin
 from core.views import BaseViewSet
 from .models import Visita, Acceso, Incidente, AccesoEvidencia
@@ -26,6 +26,12 @@ class VisitaViewSet(BaseViewSet):
         if self.request.user.is_staff:
             return qs
         return qs.filter(user=self.request.user)
+    
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete(user=request.user)
+        delete_faces_by_external_id(f"visita_{instance.id}")
+        return Response(status=204)
     
 class AccesoFilter(dj_filters.FilterSet):
     created_gte = dj_filters.DateTimeFilter(field_name="created_at", lookup_expr="gte")

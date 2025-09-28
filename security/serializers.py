@@ -30,8 +30,9 @@ class VisitaSerializer(serializers.ModelSerializer):
         visita = super().create(validated_data)
 
         if photo:
-            key = f"visitas/{visita.id}/foto_{uuid.uuid4()}.jpg"
+            key = f"visitas/{visita.id}/visita_{uuid.uuid4()}.jpg"
             upload_fileobj(photo, key)
+            index_face(key, f"visita_{visita.id}")
             visita.photo_key = key
             visita.save()
 
@@ -39,17 +40,24 @@ class VisitaSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         photo = validated_data.pop("photo", None)
+        is_deleted_changed = "is_deleted" in validated_data
+        was_deleted = getattr(instance, "is_deleted", False)
+        will_be_deleted = validated_data.get("is_deleted", was_deleted)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         if photo:
             delete_faces_by_external_id(f"visita_{instance.id}")
-            key = f"visitas/{instance.id}/{uuid.uuid4()}.jpg"
+            key = f"visitas/{instance.pk}/visita_{uuid.uuid4()}.jpg"
             upload_fileobj(photo, key)
             instance.photo_key = key
-
             index_face(key, f"visita_{instance.id}")
+        elif is_deleted_changed:
+            if will_be_deleted:
+                delete_faces_by_external_id(f"visita_{instance.id}")
+            elif was_deleted and not will_be_deleted and instance.photo_key:
+                index_face(instance.photo_key, f"visita_{instance.id}")
 
         instance.save()
         return instance
@@ -57,6 +65,7 @@ class VisitaSerializer(serializers.ModelSerializer):
 class AccesoEvidenciaSerializer(serializers.ModelSerializer):
     evidencia = serializers.ImageField(write_only=True, required=False)
     evidencia_url = serializers.SerializerMethodField()
+    visita_activa = serializers.SerializerMethodField()
 
     class Meta:
         model = AccesoEvidencia
