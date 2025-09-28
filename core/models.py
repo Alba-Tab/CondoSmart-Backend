@@ -13,17 +13,17 @@ class TimeStampedBy(models.Model):
     updated_at = models.DateTimeField(auto_now=True, editable=False)
     is_deleted = models.BooleanField(default=False)
     
-    #is_deleted = models.BooleanField(default=False)
-    #deleted_at = models.DateTimeField(null=True, blank=True)
-    #deleted_by = models.ForeignKey(
-    #    settings.AUTH_USER_MODEL, null=True, blank=True,
-    #    on_delete=models.SET_NULL, related_name="%(class)s_deleted"
-    #)
-#
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="%(class)s_deleted"
+    )
+
     ## Managers
-    #objects = SoftDeleteManager()      # solo activos
-    #all_objects = models.Manager()     # incluye eliminados
-    
+    objects = SoftDeleteManager()      # solo activos
+    all_objects = models.Manager()     # incluye eliminados
+
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, 
         related_name="%(class)s_created"
@@ -35,10 +35,9 @@ class TimeStampedBy(models.Model):
     class Meta:
         abstract = True
         
-    #def delete(self, using=None, keep_parents=False, user=None):
-    #    """Soft delete: marca como borrado en vez de eliminar físicamente"""
-    #    self.is_deleted = True
-    #    self.deleted_at = timezone.now()
-    #    if user:
-    #        self.deleted_by = user
-    #    self.save(update_fields=["is_deleted", "deleted_at", "deleted_by"])
+    def delete(self, using=None, keep_parents=False, user=None):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        if user:
+            self.deleted_by = user
+        self.save(update_fields=["is_deleted", "deleted_at", "deleted_by"])

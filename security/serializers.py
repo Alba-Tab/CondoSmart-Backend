@@ -1,139 +1,124 @@
 from rest_framework import serializers
-from core.services import upload_fileobj, get_presigned_url, search_face, index_face, delete_faces_by_external_id
-import uuid, os
-from .models import Visita, Acceso, Incidente
+from core.services import upload_fileobj, get_presigned_url, index_face, delete_faces_by_external_id, search_face, detect_plate
+from .models import Visita, Acceso, Incidente, AccesoEvidencia
+import uuid
 
 class VisitaSerializer(serializers.ModelSerializer):
-    # Campo solo para recibir archivo en POST
-    foto = serializers.ImageField(write_only=True, required=False)
-    # Campo solo de salida
-    foto_url = serializers.SerializerMethodField()
-
+    activa = serializers.SerializerMethodField()
+    photo_url = serializers.SerializerMethodField()
+    photo = serializers.ImageField(write_only=True, required=False)
     class Meta:
         model = Visita
         fields = [
-            "id", "nombre", "documento", "telefono",
-            "user", "photo_key", "foto", "foto_url"
+            "id", "nombre", "documento", "telefono", "user",
+            "photo", "photo_key", "photo_url",
+            "fecha_inicio", "dias_permiso",
+            "activa", "created_at", "updated_at"
         ]
-        read_only_fields = ["photo_key"]
+        read_only_fields = ["photo_key", "created_at", "updated_at"]
+        
+    def get_activa(self, obj):
+        return obj.is_activa()
 
+    def get_photo_url(self, obj):
+        if obj.photo_key:
+            return get_presigned_url(obj.photo_key, expires_in=300)
+        return None
+    
     def create(self, validated_data):
-        foto = validated_data.pop("foto", None)
+        photo = validated_data.pop("photo", None)
         visita = super().create(validated_data)
 
-        if foto:
+        if photo:
             key = f"visitas/{visita.id}/foto_{uuid.uuid4()}.jpg"
-            upload_fileobj(foto, key)   # directo, sin /tmp
+            upload_fileobj(photo, key)
             visita.photo_key = key
             visita.save()
-            index_face(key, external_id=f"visita_{visita.pk}")
+
         return visita
 
     def update(self, instance, validated_data):
-        foto = validated_data.pop("foto", None)
+        photo = validated_data.pop("photo", None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
-        if foto:
-            key = f"visitas/{instance.id}/foto_{uuid.uuid4()}.jpg"
-            upload_fileobj(foto, key)
+        if photo:
+            delete_faces_by_external_id(f"visita_{instance.id}")
+            key = f"visitas/{instance.id}/{uuid.uuid4()}.jpg"
+            upload_fileobj(photo, key)
             instance.photo_key = key
 
-            delete_faces_by_external_id(f"visita_{instance.id}")
             index_face(key, f"visita_{instance.id}")
 
         instance.save()
         return instance
 
-    def get_foto_url(self, obj):
-        if obj.photo_key:
-            return get_presigned_url(obj.photo_key, expires_in=300)
-        return None
-
-
-class AccesoSerializer(serializers.ModelSerializer):
+class AccesoEvidenciaSerializer(serializers.ModelSerializer):
     evidencia = serializers.ImageField(write_only=True, required=False)
     evidencia_url = serializers.SerializerMethodField()
 
     class Meta:
-        model = Acceso
+        model = AccesoEvidencia
         fields = [
-            "id", "unidad", "visita", "user", "vehiculo",
-            "modo", "sentido", "tipo", "fecha",
-            "match", "permitido",
-            "evidencia_s3", "evidencia", "evidencia_url"
+            "id", "acceso", "modo", "tipo",
+            "user", "visita", "vehiculo",
+            "match",
+            "evidencia", "evidencia_s3", "evidencia_url",
+            "visita_activa", "created_at", "updated_at"
         ]
-        read_only_fields = ["evidencia_s3", "fecha"]
+        read_only_fields = ["evidencia_s3", "match"]
 
     def create(self, validated_data):
         evidencia = validated_data.pop("evidencia", None)
-        acceso = super().create(validated_data)
+        modo = validated_data.get("modo")
 
-        # Si es manual: no se necesita reconocimiento
-        if acceso.modo == "manual":
-            acceso.match = True
-            acceso.save()
-            return acceso
-        
+        acceso_evidencia = super().create(validated_data)
+
         if evidencia:
-            key = f"accesos/{acceso.unidad_id}/{uuid.uuid4()}.jpg"
-            upload_fileobj(evidencia, key)   # directo en memoria
-            acceso.evidencia_s3 = key
-            # Reconocimiento facial con Rekognition
-            if acceso.modo == "face":
+            key = f"accesos/{acceso_evidencia.acceso_id}/{modo}_{uuid.uuid4()}.jpg"
+            upload_fileobj(evidencia, key)
+            acceso_evidencia.evidencia_s3 = key
+
+            # --- Procesamiento según modo ---
+            if modo == "face":
                 result = search_face(key)
                 if result:
-                    acceso.match = True
-                    acceso.permitido = True
+                    acceso_evidencia.match = True
                     if result["external_id"].startswith("user_"):
-                        acceso.tipo = "residente"
-                        acceso.user_id = int(result["external_id"].replace("user_", ""))
+                        acceso_evidencia.tipo = "usuario"
+                        acceso_evidencia.user_id = int(result["external_id"].replace("user_", ""))
                     elif result["external_id"].startswith("visita_"):
-                        acceso.tipo = "visita"
-                        acceso.visita_id = int(result["external_id"].replace("visita_", ""))
-                else:
-                    acceso.match = False
-                    acceso.permitido = False
-
-            elif acceso.modo == "placas":
-                plate_number = detect_plate(key)   # type: ignore
-                if plate_number:
-                    acceso.match = True
-                    acceso.permitido = True
-                    # Buscar el vehículo por placa en tu BD
+                        acceso_evidencia.tipo = "externo"
+                        acceso_evidencia.visita_id = int(result["external_id"].replace("visita_", ""))
+            elif modo == "placa":
+                plate = detect_plate(key)
+                if plate:
                     from housing.models import Vehiculo
-                    vehiculo = Vehiculo.objects.filter(placa=plate_number).first()
+                    vehiculo = Vehiculo.objects.filter(placa=plate).first()
                     if vehiculo:
-                        acceso.tipo = "vehiculo"
-                        acceso.vehiculo = vehiculo
-                    else:
-                        acceso.permitido = False
-                else:
-                    acceso.match = False
-                    acceso.permitido = False
+                        acceso_evidencia.match = True
+                        acceso_evidencia.tipo = "vehiculo"
+                        acceso_evidencia.vehiculo = vehiculo
+                        acceso_evidencia.user = vehiculo.responsable
 
-        acceso.save()
-        return acceso
-
-    def update(self, instance, validated_data):
-        evidencia = validated_data.pop("evidencia", None)
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        if evidencia:
-            key = f"accesos/{instance.unidad_id}/{uuid.uuid4()}.jpg"
-            upload_fileobj(evidencia, key)
-            instance.evidencia_s3 = key
-
-        instance.save()
-        return instance
+        acceso_evidencia.save()
+        return acceso_evidencia
 
     def get_evidencia_url(self, obj):
         if obj.evidencia_s3:
             return get_presigned_url(obj.evidencia_s3, expires_in=300)
         return None
+    def get_visita_activa(self, obj):
+        return obj.visita.is_activa() if obj.visita else None
+    
+class AccesoSerializer(serializers.ModelSerializer):
+    evidencias = AccesoEvidenciaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Acceso
+        fields = ["id", "unidad", "sentido", "permitido", "created_at", "evidencias"]
+        read_only_fields = ["created_at"]
 
 class IncidenteSerializer(serializers.ModelSerializer):
     evidencia = serializers.ImageField(write_only=True, required=False)

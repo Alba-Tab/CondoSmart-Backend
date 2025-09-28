@@ -1,25 +1,16 @@
-from django_filters import rest_framework as filters
-from core.permissions import IsAuth, AlcancePermission
-from core.pagination import DefaultPagination
-from core.mixins import AlcanceViewSetMixin
-from .models import Visita, Acceso, Incidente
-from .serializers import VisitaSerializer, AccesoSerializer, IncidenteSerializer
-from core.views import BaseViewSet
-
-from core.services import upload_file
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.contrib.auth.models import User
+from rest_framework import filters
+from django_filters import rest_framework as dj_filters
+from django_filters.rest_framework import DjangoFilterBackend
 
-import uuid, os
-
-class AccesoFilter(filters.FilterSet):
-    fecha_gte = filters.DateTimeFilter(field_name="fecha", lookup_expr="gte")
-    fecha_lte = filters.DateTimeFilter(field_name="fecha", lookup_expr="lte")
-    fecha_exacta = filters.DateFilter(field_name="fecha", lookup_expr="date")
-    class Meta:
-        model = Acceso
-        fields = ["unidad","tipo","modo","sentido","fecha","fecha_gte","fecha_lte","fecha_exacta"]
+from core.permissions import IsAuth, AlcancePermission
+from core.pagination import DefaultPagination
+from core.services import upload_fileobj, get_presigned_url, search_face, detect_plate
+from core.mixins import AlcanceViewSetMixin
+from core.views import BaseViewSet
+from .models import Visita, Acceso, Incidente, AccesoEvidencia
+from .serializers import VisitaSerializer, AccesoSerializer, IncidenteSerializer, AccesoEvidenciaSerializer
 
 class VisitaViewSet(BaseViewSet):
     queryset = Visita.objects.all()
@@ -35,23 +26,46 @@ class VisitaViewSet(BaseViewSet):
         if self.request.user.is_staff:
             return qs
         return qs.filter(user=self.request.user)
+    
+class AccesoFilter(dj_filters.FilterSet):
+    created_gte = dj_filters.DateTimeFilter(field_name="created_at", lookup_expr="gte")
+    created_lte = dj_filters.DateTimeFilter(field_name="created_at", lookup_expr="lte")
+    created_date = dj_filters.DateFilter(field_name="created_at", lookup_expr="date")
+
+    class Meta:
+        model = Acceso
+        fields = ["unidad", "sentido", "permitido", "created_gte", "created_lte", "created_date"]
 
 class AccesoViewSet(AlcanceViewSetMixin):
-    queryset = Acceso.objects.select_related("unidad", "visita", "user", "vehiculo")
+    queryset = Acceso.objects.select_related("unidad")
     serializer_class = AccesoSerializer
     permission_classes = [IsAuth, AlcancePermission]
+
+    filter_backends = [dj_filters.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = AccesoFilter
-    search_fields = ["visita__nombre","visita__documento","modo","tipo","sentido"]
+    search_fields = ["unidad__nombre", "unidad__code"]
     ordering_fields = "__all__"
+    ordering = ["-created_at"]
     pagination_class = DefaultPagination
-    scope_field = "unidad"
+
+class AccesoEvidenciaViewSet(BaseViewSet):
+    queryset = AccesoEvidencia.objects.select_related("acceso", "user", "visita", "vehiculo")
+    serializer_class = AccesoEvidenciaSerializer
+    permission_classes = [IsAuth, AlcancePermission]
+    filterset_fields = ["acceso", "acceso__unidad", "modo", "tipo", "match", "created_at"]
+    search_fields = ["user__username", "vehiculo__placa", "visita__nombre"]
+    ordering_fields = "__all__"
+    ordering = ["-created_at"]
+    pagination_class = DefaultPagination
+
 
 class IncidenteViewSet(AlcanceViewSetMixin):
     queryset = Incidente.objects.select_related("unidad")
     serializer_class = IncidenteSerializer
     permission_classes = [IsAuth, AlcancePermission]
-    filterset_fields = ["unidad","user","estado","created_at","updated_at"]
-    search_fields = ["titulo","descripcion"]
+    filterset_fields = ["unidad", "user", "estado", "created_at", "updated_at"]
+    search_fields = ["titulo", "descripcion"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
     scope_field = "unidad"
+    
