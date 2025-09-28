@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from core.services import upload_fileobj, upload_file, get_presigned_url
+from core.services import upload_fileobj, get_presigned_url, search_face, index_face, delete_faces_by_external_id
 import uuid, os
 from .models import Visita, Acceso, Incidente
 
@@ -26,7 +26,7 @@ class VisitaSerializer(serializers.ModelSerializer):
             upload_fileobj(foto, key)   # directo, sin /tmp
             visita.photo_key = key
             visita.save()
-
+            index_face(key, external_id=f"visita_{visita.pk}")
         return visita
 
     def update(self, instance, validated_data):
@@ -39,6 +39,9 @@ class VisitaSerializer(serializers.ModelSerializer):
             key = f"visitas/{instance.id}/foto_{uuid.uuid4()}.jpg"
             upload_fileobj(foto, key)
             instance.photo_key = key
+
+            delete_faces_by_external_id(f"visita_{instance.id}")
+            index_face(key, f"visita_{instance.id}")
 
         instance.save()
         return instance
@@ -67,12 +70,50 @@ class AccesoSerializer(serializers.ModelSerializer):
         evidencia = validated_data.pop("evidencia", None)
         acceso = super().create(validated_data)
 
+        # Si es manual: no se necesita reconocimiento
+        if acceso.modo == "manual":
+            acceso.match = True
+            acceso.save()
+            return acceso
+        
         if evidencia:
             key = f"accesos/{acceso.unidad_id}/{uuid.uuid4()}.jpg"
             upload_fileobj(evidencia, key)   # directo en memoria
             acceso.evidencia_s3 = key
-            acceso.save()
+            # Reconocimiento facial con Rekognition
+            if acceso.modo == "face":
+                result = search_face(key)
+                if result:
+                    acceso.match = True
+                    acceso.permitido = True
+                    if result["external_id"].startswith("user_"):
+                        acceso.tipo = "residente"
+                        acceso.user_id = int(result["external_id"].replace("user_", ""))
+                    elif result["external_id"].startswith("visita_"):
+                        acceso.tipo = "visita"
+                        acceso.visita_id = int(result["external_id"].replace("visita_", ""))
+                else:
+                    acceso.match = False
+                    acceso.permitido = False
 
+            elif acceso.modo == "placas":
+                plate_number = detect_plate(key)   # type: ignore
+                if plate_number:
+                    acceso.match = True
+                    acceso.permitido = True
+                    # Buscar el vehículo por placa en tu BD
+                    from housing.models import Vehiculo
+                    vehiculo = Vehiculo.objects.filter(placa=plate_number).first()
+                    if vehiculo:
+                        acceso.tipo = "vehiculo"
+                        acceso.vehiculo = vehiculo
+                    else:
+                        acceso.permitido = False
+                else:
+                    acceso.match = False
+                    acceso.permitido = False
+
+        acceso.save()
         return acceso
 
     def update(self, instance, validated_data):

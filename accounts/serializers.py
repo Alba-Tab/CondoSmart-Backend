@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import Group
 from .models import CustomUser
-from core.services import upload_fileobj, get_presigned_url
+from core.services import upload_fileobj, get_presigned_url, index_face, delete_faces_by_external_id
 import uuid, os
 
 class UserSerializer(serializers.ModelSerializer):
@@ -42,17 +42,20 @@ class UserSerializer(serializers.ModelSerializer):
             upload_fileobj(photo, key) 
             user.photo_key = key
             user.save()
-
+            index_face(key, external_id=f"user_{user.pk}")
         return user
 
     def update(self, instance, validated_data):
-
+        groups = validated_data.pop("groups", None)
         password = validated_data.pop("password", None)
         photo = validated_data.pop("photo", None)
 
         # Actualiza los demás campos
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
+        if groups is not None:
+            instance.groups.set(groups)
 
         if password:
             instance.set_password(password)
@@ -65,6 +68,8 @@ class UserSerializer(serializers.ModelSerializer):
             upload_fileobj(photo, key)
             instance.photo_key = key
             instance.save()
+            delete_faces_by_external_id(f"user_{instance.pk}")
+            index_face(key, f"user_{instance.pk}")
 
         return instance
     
