@@ -14,7 +14,8 @@ class TicketMantenimiento(TimeStampedBy):
     ESTADO = [("abierto","abierto"),("en_progreso","en_progreso"),("resuelto","resuelto"),("cerrado","cerrado")]
 
     unidad = models.ForeignKey("housing.Unidad", on_delete=models.CASCADE, related_name="tickets_mant")
-    servicio = models.ForeignKey(Servicio, on_delete=models.SET_NULL, null=True, related_name="tickets")
+    servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, null=True, related_name="tickets")
+    
     titulo = models.CharField(max_length=160)
     descripcion = models.TextField(blank=True)
     estado = models.CharField(max_length=16, choices=ESTADO, default="abierto")

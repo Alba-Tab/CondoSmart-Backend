@@ -38,13 +38,13 @@ class VehiculoViewSet(BaseViewSet):
         return qs.filter(responsable=self.request.user)
     
 class MascotaViewSet(BaseViewSet):
-    queryset = Mascota.objects.select_related("unidad","responsable")
+    queryset = Mascota.objects.select_related("responsable")
     serializer_class = MascotaSerializer
     permission_classes = [IsAuth, AlcancePermission]
-    filterset_fields = ["unidad","tipo","activo","desde","hasta","responsable"]
+    filterset_fields = ["tipo","activo","desde","hasta","responsable"]
     search_fields = ["nombre","raza"]
     ordering_fields = "__all__"
-    scope_field = "unidad"
+    scope_field = "responsable"
     def get_queryset(self):
         qs = super().get_queryset()
         if self.request.user.is_staff:

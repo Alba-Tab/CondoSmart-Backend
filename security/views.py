@@ -12,24 +12,30 @@ from core.views import BaseViewSet
 from .models import Visita, Acceso, Incidente, AccesoEvidencia
 from .serializers import VisitaSerializer, AccesoSerializer, IncidenteSerializer, AccesoEvidenciaSerializer
 
+
+from django_filters.rest_framework import DjangoFilterBackend
+
 class VisitaViewSet(BaseViewSet):
     queryset = Visita.objects.all()
     serializer_class = VisitaSerializer
     permission_classes = [IsAuth]
-    filterset_fields = ["user","documento","created_at","updated_at"]
-    search_fields = ["nombre","documento","telefono"]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active", "documento", "created_at", "updated_at"]
+    search_fields = ["nombre", "documento", "telefono"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
 
     def get_queryset(self):
         qs = super().get_queryset()
+        # Si no es staff, filtra solo visitas activas creadas por el usuario
         if self.request.user.is_staff:
             return qs
-        return qs.filter(user=self.request.user)
-    
+        return qs.filter(created_by=self.request.user, is_active=True)
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.delete(user=request.user)
+        instance.is_active = False
+        instance.save()
         delete_faces_by_external_id(f"visita_{instance.id}")
         return Response(status=204)
     

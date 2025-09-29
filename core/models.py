@@ -11,19 +11,17 @@ class SoftDeleteManager(models.Manager):
 class TimeStampedBy(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
-    is_deleted = models.BooleanField(default=False)
-    
-    is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
-    deleted_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="%(class)s_deleted"
-    )
+    is_deleted = models.BooleanField(default=False)
 
     ## Managers
     objects = SoftDeleteManager()      # solo activos
     all_objects = models.Manager()     # incluye eliminados
 
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,on_delete=models.SET_NULL, 
+        related_name="%(class)s_deleted"
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, 
         related_name="%(class)s_created"

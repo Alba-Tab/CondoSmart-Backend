@@ -3,25 +3,24 @@ from core.models import TimeStampedBy
 from django.utils.timezone import now, timedelta
 
 class Visita(TimeStampedBy):
+    is_active = models.BooleanField(default=True, help_text="Marca si la visita está activa o desactivada (soft delete)")
     nombre = models.CharField(max_length=120)
     documento = models.CharField(max_length=32)
     telefono = models.CharField(max_length=24, blank=True)
-    user = models.ForeignKey("accounts.CustomUser", on_delete=models.SET_NULL, related_name="visitas_registradas", null=True, blank=True)
     photo_key = models.CharField(max_length=255, blank=True, null=True) 
     fecha_inicio = models.DateTimeField(null=True, blank=True)
     dias_permiso = models.IntegerField(default=1)
     
     class Meta:
         indexes = [models.Index(fields=["documento"])]
-        constraints = [
-            models.UniqueConstraint(fields=["documento", "user"], name="unique_visita_por_user")
-        ]
 
     def __str__(self) -> str:
         return f"{self.nombre} ({self.documento})"
-    def is_activa(self):
-        fecha = self.fecha_inicio if self.fecha_inicio else self.created_at
-        return fecha <= now() <= fecha + timedelta(days=self.dias_permiso)
+    
+    def permitido(self):
+        inicio = self.fecha_inicio or self.created_at
+        fin = inicio + timedelta(days=self.dias_permiso)
+        return inicio <= now() <= fin
 
 class Acceso(TimeStampedBy):
     SENTIDOS = [("in","in"),("out","out")]

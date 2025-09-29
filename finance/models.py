@@ -7,7 +7,7 @@ class Cargo(TimeStampedBy):
     ESTADO = [("pendiente","pendiente"),("parcial","parcial"),("pagado","pagado"),("anulado","anulado")]
 
     unidad = models.ForeignKey("housing.Unidad", on_delete=models.CASCADE, related_name="cargos")
-    reserva = models.ForeignKey("reservations.Reserva", on_delete=models.SET_NULL, related_name="cargos", null=True, blank=True)
+    reserva = models.ForeignKey("reservations.Reserva", on_delete=models.CASCADE, related_name="cargos", null=True, blank=True)
     concepto = models.CharField(max_length=16, choices=TIPO, default="cuota")
     descripcion = models.CharField(max_length=200, blank=True)
     monto = models.DecimalField(max_digits=10, decimal_places=2)

@@ -49,10 +49,11 @@ class Mascota(TimeStampedBy):
     is_active = models.BooleanField(default=True)
     desde = models.DateField(null=True, blank=True)
     hasta = models.DateField(null=True, blank=True)
-    unidad = models.ForeignKey(Unidad, on_delete=models.SET_NULL, related_name="mascotas", null=True, blank=True)
-    responsable = models.ForeignKey("accounts.CustomUser", on_delete=models.SET_NULL, related_name="mascotas", null=True, blank=True)
+    responsable = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE, related_name="mascotas", null=True, blank=True)
     def __str__(self): 
-        return f"{self.nombre} ({self.tipo} {self.raza}) Dueño : {self.responsable.first_name}" # type: ignore
+        if self.responsable:
+            return f"{self.nombre} ({self.tipo} {self.raza}) Dueño : {self.responsable.first_name}"
+        return f"{self.nombre} ({self.tipo} {self.raza}) Dueño : Sin responsable" 
     
 class Contrato (TimeStampedBy):
     unidad = models.ForeignKey(Unidad, on_delete=models.CASCADE, related_name="contratos")

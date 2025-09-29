@@ -4,8 +4,8 @@ from .models import Visita, Acceso, AccesoEvidencia, Incidente
 
 @admin.register(Visita)
 class VisitaAdmin(admin.ModelAdmin):
-    list_display = ("id", "nombre", "documento", "telefono", "user", "created_by", "created_at")
-    search_fields = ("nombre", "documento", "telefono", "user__username")
+    list_display = ("id", "nombre", "documento", "telefono", "created_by", "created_at")
+    search_fields = ("nombre", "documento", "telefono", "created_by__username")
     list_filter = ("created_by", "created_at")
     ordering = ("-created_at",)
 

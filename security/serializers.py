@@ -3,25 +3,27 @@ from core.services import (upload_fileobj, get_presigned_url,
                            index_face, delete_faces_by_external_id, search_face, 
                            detect_plate)
 from .models import Visita, Acceso, Incidente, AccesoEvidencia
-from accounts.models import CustomUser
+from django.utils.timezone import now, timedelta
 
 class VisitaSerializer(serializers.ModelSerializer):
-    activa = serializers.SerializerMethodField()
+    active = serializers.BooleanField(source="is_active", read_only=True)
+    permitido = serializers.SerializerMethodField()
     photo_url = serializers.SerializerMethodField()
     photo = serializers.ImageField(write_only=True, required=False)
-    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False, allow_null=True)
     class Meta:
         model = Visita
         fields = [
             "id", "nombre", "documento", "telefono", "user",
             "photo", "photo_key", "photo_url",
             "fecha_inicio", "dias_permiso",
-            "activa", "created_at", "updated_at"
+            "active", "created_at", "updated_at"
         ]
         read_only_fields = ["photo_key", "created_at", "updated_at"]
         
-    def get_activa(self, obj):
-        return obj.is_activa()
+    def get_permitido(self, obj):
+        inicio = obj.fecha_inicio or obj.created_at
+        fin = inicio + timedelta(days=obj.dias_permiso)
+        return inicio <= now() <= fin
 
     def get_photo_url(self, obj):
         if obj.photo_key:
@@ -30,6 +32,8 @@ class VisitaSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         photo = validated_data.pop("photo", None)
+        if not validated_data.get("fecha_inicio"):
+            validated_data["fecha_inicio"] = now()
         visita = super().create(validated_data)
 
         if photo:

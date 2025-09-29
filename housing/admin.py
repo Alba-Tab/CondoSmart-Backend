@@ -24,8 +24,8 @@ class VehiculoAdmin(admin.ModelAdmin):
 
 @admin.register(Mascota)
 class MascotaAdmin(admin.ModelAdmin):
-    list_display = ("id", "nombre", "tipo", "raza", "unidad", "responsable", "is_active", "created_by")
-    search_fields = ("nombre", "raza", "responsable__username", "unidad__code")
+    list_display = ("id", "nombre", "tipo", "raza", "responsable", "is_active", "created_by")
+    search_fields = ("nombre", "raza", "responsable__username")
     list_filter = ("tipo", "is_active", "created_by")
     ordering = ("nombre",)
 
