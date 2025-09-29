@@ -2,7 +2,6 @@ from rest_framework import serializers
 from django.contrib.auth.models import Group
 from .models import CustomUser
 from core.services import upload_fileobj, get_presigned_url, index_face, delete_faces_by_external_id
-import uuid, os
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=False)
@@ -18,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "pk", "username", "password", "first_name", "last_name",
             "email", "ci", "phone", "is_active", "groups", "is_staff",
-            "photo_key", "photo", "photo_url"
+            "photo_key", "photo", "photo_url", "is_deleted"
         ]
         read_only_fields = ("created_by", "photo_key")
 
@@ -38,7 +37,7 @@ class UserSerializer(serializers.ModelSerializer):
             user.groups.set(groups)
 
         if photo:
-            key = f"usuarios/{user.pk}/user_{uuid.uuid4()}.jpg"
+            key = f"usuarios/user_{user.pk}.jpg"
             upload_fileobj(photo, key)
             user.photo_key = key
             user.save()
@@ -49,7 +48,11 @@ class UserSerializer(serializers.ModelSerializer):
         groups = validated_data.pop("groups", None)
         password = validated_data.pop("password", None)
         photo = validated_data.pop("photo", None)
-
+        
+        is_deleted_changed = "is_deleted" in validated_data
+        was_deleted = getattr(instance, "is_deleted", False) # estado previo
+        will_be_deleted = validated_data.get("is_deleted", was_deleted) # estado nuevo
+        
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
@@ -59,15 +62,12 @@ class UserSerializer(serializers.ModelSerializer):
         if password:
             instance.set_password(password)
             
-        is_deleted_changed = "is_deleted" in validated_data 
-        was_deleted = getattr(instance, "is_deleted", False) # estado previo
-        will_be_deleted = validated_data.get("is_deleted", was_deleted) # estado nuevo
-
+        
         if photo:
-            key = f"usuarios/{instance.pk}/user_{uuid.uuid4()}.jpg"
+            delete_faces_by_external_id(f"user_{instance.pk}")
+            key = f"usuarios/user_{instance.pk}.jpg"
             upload_fileobj(photo, key)
             instance.photo_key = key
-            delete_faces_by_external_id(f"user_{instance.pk}")
             index_face(key, f"user_{instance.pk}")
         elif is_deleted_changed:
             if will_be_deleted:

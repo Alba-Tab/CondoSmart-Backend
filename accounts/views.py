@@ -32,6 +32,7 @@ class UserViewSet(BaseViewSet):
         instance = self.get_object()
         instance.delete(user=request.user)
         delete_faces_by_external_id(f"user_{instance.id}")
+        print("💖DELETE user")
         return Response(status=204)
         
 class ChangePasswordView(APIView):

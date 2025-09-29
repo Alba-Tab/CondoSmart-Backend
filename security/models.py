@@ -13,6 +13,10 @@ class Visita(TimeStampedBy):
     
     class Meta:
         indexes = [models.Index(fields=["documento"])]
+        constraints = [
+            models.UniqueConstraint(fields=["documento", "user"], name="unique_visita_por_user")
+        ]
+
     def __str__(self) -> str:
         return f"{self.nombre} ({self.documento})"
     def is_activa(self):

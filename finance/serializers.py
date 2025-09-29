@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from core.services import upload_fileobj, get_presigned_url
-import uuid, os
 from .models import Pago, Cargo, PagoCargo
 
 class CargoSerializer(serializers.ModelSerializer):
@@ -23,7 +22,7 @@ class PagoSerializer(serializers.ModelSerializer):
         pago = super().create(validated_data)
 
         if comprobante:
-            key = f"pagos/{pago.user_id}/{uuid.uuid4()}_{comprobante.name}"
+            key = f"pagos/{pago.user_id}/pago_{comprobante.id}.jpg"
             upload_fileobj(comprobante, key)  # directo sin pasar por disco
             pago.comprobante_key = key
             pago.save()
@@ -37,7 +36,7 @@ class PagoSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
 
         if comprobante:
-            key = f"pagos/{instance.user_id}/{uuid.uuid4()}_{comprobante.name}"
+            key = f"pagos/{instance.user_id}/pago_{comprobante.id}.jpg"
             upload_fileobj(comprobante, key)
             instance.comprobante_key = key
 

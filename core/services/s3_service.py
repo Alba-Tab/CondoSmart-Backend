@@ -28,7 +28,7 @@ def upload_file(file_path: str, key: str) -> str:
 
 def upload_fileobj(file_obj, key: str) -> str:
     """
-    Sube un archivo recibido en memoria (ej. request.FILES en Django).
+    Sube un archivo recibido en memoria
     """
     try:
         s3_client.upload_fileobj(file_obj, BUCKET_NAME, key)
@@ -40,7 +40,7 @@ def upload_fileobj(file_obj, key: str) -> str:
 
 def get_presigned_url(key: str, expires_in: int = 300) -> str:
     """
-    Genera una URL temporal (pre-firmada) para acceder a un archivo en S3.
+    Genera una URL temporal para acceder a un archivo en S3
     """
     try:
         return s3_client.generate_presigned_url(

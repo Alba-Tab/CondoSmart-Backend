@@ -1,12 +1,15 @@
 from rest_framework import serializers
-from core.services import upload_fileobj, get_presigned_url, index_face, delete_faces_by_external_id, search_face, detect_plate
+from core.services import (upload_fileobj, get_presigned_url, 
+                           index_face, delete_faces_by_external_id, search_face, 
+                           detect_plate)
 from .models import Visita, Acceso, Incidente, AccesoEvidencia
-import uuid
+from accounts.models import CustomUser
 
 class VisitaSerializer(serializers.ModelSerializer):
     activa = serializers.SerializerMethodField()
     photo_url = serializers.SerializerMethodField()
     photo = serializers.ImageField(write_only=True, required=False)
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False, allow_null=True)
     class Meta:
         model = Visita
         fields = [
@@ -30,7 +33,7 @@ class VisitaSerializer(serializers.ModelSerializer):
         visita = super().create(validated_data)
 
         if photo:
-            key = f"visitas/{visita.id}/visita_{uuid.uuid4()}.jpg"
+            key = f"visitas/visita_{visita.id}.jpg"
             upload_fileobj(photo, key)
             index_face(key, f"visita_{visita.id}")
             visita.photo_key = key
@@ -49,7 +52,7 @@ class VisitaSerializer(serializers.ModelSerializer):
 
         if photo:
             delete_faces_by_external_id(f"visita_{instance.id}")
-            key = f"visitas/{instance.pk}/visita_{uuid.uuid4()}.jpg"
+            key = f"visitas/visita_{instance.id}.jpg"
             upload_fileobj(photo, key)
             instance.photo_key = key
             index_face(key, f"visita_{instance.id}")
@@ -85,7 +88,7 @@ class AccesoEvidenciaSerializer(serializers.ModelSerializer):
         acceso_evidencia = super().create(validated_data)
 
         if evidencia:
-            key = f"accesos/{acceso_evidencia.acceso_id}/{modo}_{uuid.uuid4()}.jpg"
+            key = f"accesos/{acceso_evidencia.acceso_id}/{modo}_{evidencia.id}.jpg"
             upload_fileobj(evidencia, key)
             acceso_evidencia.evidencia_s3 = key
 
@@ -146,8 +149,8 @@ class IncidenteSerializer(serializers.ModelSerializer):
         incidente = super().create(validated_data)
 
         if evidencia:
-            key = f"incidentes/{incidente.unidad_id}/{uuid.uuid4()}.jpg"
-            upload_fileobj(evidencia, key)   # directo en memoria
+            key = f"incidentes/incidente_{incidente.id}.jpg"
+            upload_fileobj(evidencia, key)   
             incidente.evidencia_s3 = key
             incidente.save()
 
@@ -160,7 +163,7 @@ class IncidenteSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
 
         if evidencia:
-            key = f"incidentes/{instance.unidad_id}/{uuid.uuid4()}.jpg"
+            key = f"incidentes/incidente_{instance.id}.jpg"
             upload_fileobj(evidencia, key)
             instance.evidencia_s3 = key
 
