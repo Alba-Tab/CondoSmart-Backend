@@ -1,6 +1,9 @@
 from django.db import models
 from core.models import TimeStampedBy
 from decimal import Decimal
+from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
+
 class Condominio(TimeStampedBy):
     DIRECCION_TIPO = [("vertical","departamento"), ("horizontal","casa")]
 
@@ -85,7 +88,7 @@ class Contrato (TimeStampedBy):
     end = models.DateField(null=True, blank=True)
     documento = models.FileField(upload_to="contratos/", null=True, blank=True)
     monto_mensual = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
+    cargos = GenericRelation('finance.Cargo', related_query_name='contrato')
     class Meta:
         indexes = [models.Index(fields=["unidad","inquilino"])]
     def __str__(self): 
@@ -95,9 +98,9 @@ class Contrato (TimeStampedBy):
     def generar_cargo_mensual(self, periodo, monto=None):
         from finance.models import Cargo
         monto = monto or self.monto_mensual or Decimal("0.00")
-
+        content_type = ContentType.objects.get_for_model(self)
         # evitar duplicados
-        if Cargo.objects.filter(origen=self, periodo=periodo).exists():
+        if Cargo.objects.filter(content_type=content_type, object_id=self.pk, periodo=periodo).exists():
             return None  
 
         cargo = Cargo.objects.create(

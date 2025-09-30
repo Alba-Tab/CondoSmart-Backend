@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Servicio, TicketMantenimiento, TarifaServicio
+from .models import Servicio, TicketMantenimiento
 
 @admin.register(Servicio)
 class ServicioAdmin(admin.ModelAdmin):
@@ -17,13 +17,3 @@ class TicketMantenimientoAdmin(admin.ModelAdmin):
     list_filter = ("estado", "servicio", "unidad", "created_by")
     search_fields = ("titulo", "descripcion", "unidad__code", "servicio__name")
     ordering = ("-programado",)
-
-@admin.register(TarifaServicio)
-class TarifaServicioAdmin(admin.ModelAdmin):
-    list_display = (
-        "id", "servicio", "monto", "vigente_desde",
-        "vigente_hasta", "created_by", "updated_by"
-    )
-    list_filter = ("servicio", "vigente_desde", "vigente_hasta", "created_by")
-    search_fields = ("servicio__name",)
-    ordering = ("-vigente_desde",)

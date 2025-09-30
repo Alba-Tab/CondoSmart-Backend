@@ -3,6 +3,7 @@ from core.models import TimeStampedBy
 from decimal import Decimal
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Sum
 
 class Cargo(TimeStampedBy):
     TIPO = [("cuota","cuota"),("multa","multa"),("deposito","deposito"),("otro","otro")]
@@ -52,11 +53,18 @@ class Pago(TimeStampedBy):
     
     user = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE, related_name="user")
     fecha = models.DateField()
-    monto_total = models.DecimalField(max_digits=10, decimal_places=2)
     estado = models.CharField(max_length=16, choices=ESTADO, default="pendiente")
     metodo = models.CharField(max_length=64, choices=METODO, default="efectivo")
     comprobante_key = models.CharField(max_length=128, blank=True, null=True) 
     observacion = models.TextField(blank=True)
+    
+    @property
+    def monto_total(self):
+        """Calcula la suma de los montos de todos los PagoCargo asociados."""
+        pagocargo = PagoCargo.objects.filter(pago=self)
+        total = pagocargo.aggregate(total=Sum('monto'))['total'] 
+        return total or Decimal('0.00')
+    
     def __str__(self): 
         estado = "" if self.is_active else "(inactivo)"
         return f"P{self.pk}-U{self.user.id} ${self.monto_total} {estado}"
@@ -67,7 +75,8 @@ class Pago(TimeStampedBy):
         pagos = PagoCargo.objects.filter(pago=self)
         for pc in pagos:
             cargo = pc.cargo
-            cargo.registrar_pago(pc.monto) 
+            # Actualiza el saldo del cargo asociado
+            cargo.registrar_pago(pc.monto if pc.monto else Decimal('0.00')) 
         self.estado = "confirmado"
         self.save()
 
@@ -79,9 +88,17 @@ class Pago(TimeStampedBy):
 class PagoCargo(TimeStampedBy):
     pago = models.ForeignKey(Pago, on_delete=models.CASCADE, related_name="aplicaciones")
     cargo = models.ForeignKey(Cargo, on_delete=models.CASCADE, related_name="pagos")
-    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    monto = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True, default=Decimal('0.00'))
     class Meta:
         indexes = [models.Index(fields=["pago","cargo"])]
+    def save(self, *args, **kwargs):
+        if self.monto is None:
+            if self.cargo:
+                self.monto = self.cargo.saldo
+            else:
+                self.monto = Decimal('0.00')
+        super().save(*args, **kwargs)
+
     def __str__(self): 
         estado = "" if self.is_active else "(inactivo)"
         return f"P{self.pago.pk}-C{self.cargo.pk} ${self.monto} {estado}"

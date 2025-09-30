@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     "core","accounts","housing",
     "security","reservations",
     "finance","communication",
-    "maintenance","reports",
+    "maintenance",
     
     "storages",
 ]

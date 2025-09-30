@@ -10,7 +10,6 @@ urlpatterns = [
     path("", include("finance.urls")),
     path("", include("communication.urls")),
     path("", include("maintenance.urls")),
-    path("", include("reports.urls")),
     path("health/", HealthView.as_view(), name="health"),
     
     path("router/", include(router.urls)),

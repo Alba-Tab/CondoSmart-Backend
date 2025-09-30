@@ -5,6 +5,9 @@ from .models import Cargo, Pago, PagoCargo
 from .serializers import CargoSerializer, PagoSerializer, PagoCargoSerializer
 from core.views import BaseViewSet
 from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
+
 
 class PagoFilter(filters.FilterSet):
     fecha_gte = filters.DateTimeFilter(field_name="fecha", lookup_expr="gte")
@@ -22,6 +25,20 @@ class CargoViewSet(AlcanceViewSetMixin):
     search_fields = ["descripcion"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
+    @action(detail=True, methods=["post"])
+    def anular(self, request, pk=None):
+        """
+        Endpoint para anular un cargo. Llama al método .anular() del modelo.
+        """
+        cargo = self.get_object()
+        try:
+            cargo.anular()
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Devuelve el estado actualizado del cargo
+        serializer = self.get_serializer(cargo)
+        return Response(serializer.data)
 
 class PagoViewSet(BaseViewSet):
     queryset = Pago.objects.select_related("user")
@@ -56,7 +73,7 @@ class PagoCargoViewSet(AlcanceViewSetMixin):
     queryset = PagoCargo.all_objects.all()
     serializer_class = PagoCargoSerializer
     permission_classes = [IsAuth, AlcancePermission]
-    filterset_fields = ["pago", "cargo", "monto", "orden", "created_at", "updated_at"]
+    filterset_fields = ["pago", "cargo", "monto", "created_at", "updated_at"]
     search_fields = ["pago__user__username", "cargo__descripcion"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination

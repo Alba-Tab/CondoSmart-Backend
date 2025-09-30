@@ -13,7 +13,8 @@ class CargoSerializer(serializers.ModelSerializer):
 class PagoSerializer(serializers.ModelSerializer):
     comprobante = serializers.FileField(write_only=True, required=False) 
     comprobante_url = serializers.SerializerMethodField()
-
+    monto_total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    
     class Meta:
         model = Pago
         fields = [

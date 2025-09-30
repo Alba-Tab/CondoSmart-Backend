@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import Cargo, Pago, PagoCargo
-@admin.register(Cargo)
 
+@admin.register(Cargo)
 class CargoAdmin(admin.ModelAdmin):
     list_display = ("pk", "unidad", "concepto", "monto", "estado", "saldo", "periodo", "created_by")
     search_fields = ("descripcion", "unidad__id")
@@ -17,7 +17,7 @@ class PagoAdmin(admin.ModelAdmin):
 
 @admin.register(PagoCargo)
 class PagoCargoAdmin(admin.ModelAdmin):
-    list_display = ("pk", "pago", "cargo", "monto", "orden", "created_by")
+    list_display = ("pk", "pago", "cargo", "monto", "created_by")
     search_fields = ("pago__user__username", "cargo__descripcion")
     list_filter = ("created_by", "updated_by")
-    ordering = ("pago", "orden")
+    ordering = ("pago",)

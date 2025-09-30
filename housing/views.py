@@ -11,6 +11,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from datetime import date
 from django.db import models
+from django.contrib.contenttypes.models import ContentType
+from finance.models import Cargo
+from decimal import Decimal
 
 class CondominioViewSet(AlcanceViewSetMixin):
 
@@ -114,28 +117,49 @@ class ContratoViewSet(AlcanceViewSetMixin):
         })
     @action(detail=False, methods=["post"])
     def generar_cargos_mes(self, request):
-        """Genera cargos mensuales de TODOS los contratos activos para el mes actual"""
         hoy = date.today()
         periodo = date(hoy.year, hoy.month, 1)
-
-        contratos = Contrato.objects.filter(
+        print("Generando cargos para el período:", periodo)
+        contratos_activos = Contrato.objects.filter(
             is_active=True,
             start__lte=periodo
         ).filter(
             models.Q(end__isnull=True) | models.Q(end__gte=periodo)
         )
+        # 2. Obtener los IDs de los contratos que YA tienen un cargo para este período
+        content_type = ContentType.objects.get_for_model(Contrato)
+        contratos_con_cargo_existente = Cargo.objects.filter(
+            content_type=content_type,
+            object_id__in=contratos_activos.values_list('id', flat=True),
+            periodo=periodo
+        ).values_list('object_id', flat=True)
 
-        total_generados = 0
-        cargos_ids = []
+        # 3. Filtrar los contratos a los que realmente les falta el cargo
+        contratos_a_generar = contratos_activos.exclude(id__in=contratos_con_cargo_existente)
 
-        for contrato in contratos:
-            cargo = contrato.generar_cargo_mensual(periodo)
-            if cargo:
-                total_generados += 1
-                cargos_ids.append(cargo.pk)
+        nuevos_cargos = []
+        for contrato in contratos_a_generar:
+            monto = contrato.monto_mensual or Decimal("0.00")
+            nuevos_cargos.append(
+                Cargo(
+                    unidad=contrato.unidad,
+                    origen=contrato,
+                    concepto="cuota",
+                    descripcion=f"Expensa mensual {periodo:%Y-%m} (Contrato {contrato.pk})",
+                    monto=monto,
+                    saldo=monto,
+                    periodo=periodo,
+                    created_by=request.user,
+                )
+            )
+        if nuevos_cargos:
+            cargos_creados = Cargo.objects.bulk_create(nuevos_cargos)
+            cargos_ids = [cargo.pk for cargo in cargos_creados]
+        else:
+            cargos_ids = []
 
         return Response({
-            "total_generados": total_generados,
+            "total_generados": len(nuevos_cargos),
             "cargos_ids": cargos_ids,
             "periodo": str(periodo)
         })
