@@ -1,6 +1,6 @@
 
 from rest_framework.response import Response
-from rest_framework import filters
+from rest_framework import filters, status 
 from django_filters import rest_framework as dj_filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
@@ -10,9 +10,8 @@ from core.mixins import AlcanceViewSetMixin
 from core.views import BaseViewSet
 from .models import Visita, Acceso, Incidente, AccesoEvidencia
 from .serializers import VisitaSerializer, AccesoSerializer, IncidenteSerializer, AccesoEvidenciaSerializer
+from decimal import Decimal
 
-
-from django_filters.rest_framework import DjangoFilterBackend
 
 class VisitaViewSet(BaseViewSet):
     queryset = Visita.objects.all()

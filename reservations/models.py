@@ -2,7 +2,8 @@ from django.db import models
 from core.models import TimeStampedBy
 from decimal import Decimal
 from finance.models import Cargo
-
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 class AreaComun(TimeStampedBy):
     name = models.CharField(max_length=120)
@@ -58,11 +59,25 @@ class Reserva(TimeStampedBy):
         self.status = "confirmada"
         self.save()
         
-    def cancelar(self):
+    def cancelar(self,user):
+        if self.status == 'cancelada':
+            raise ValueError("La reserva ya está cancelada.")
         if self.status != "pendiente":
             raise ValueError("Solo reservas pendientes pueden cancelarse.")
-        Cargo.objects.filter(reserva=self, concepto="deposito", estado="pendiente").update(estado="anulado", saldo=Decimal("0.00"))
-        self.status = "cancelada"
+        content_type = ContentType.objects.get_for_model(self)
+        cargo_deposito = Cargo.objects.filter(
+            content_type=content_type,
+            object_id=self.pk,
+            concepto="deposito"
+        ).first()
+        if cargo_deposito and cargo_deposito.estado != 'anulado':
+            cargo_deposito.anular()
+            # Asigna el usuario que realizó la anulación
+            cargo_deposito.updated_by = user
+            cargo_deposito.save()
+
+        self.status = 'cancelada'
+        self.updated_by = user
         self.save()
         
     def finalizar(self):

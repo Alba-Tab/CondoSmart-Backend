@@ -6,6 +6,8 @@ from .models import AreaComun, Reserva, Suministro
 from .serializers import AreaComunSerializer, ReservaSerializer, SuministroSerializer
 from core.views import BaseViewSet
 from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
 
 class ReservaFilter(filters.FilterSet):
     start_gte = filters.DateTimeFilter(field_name="start", lookup_expr="gte")
@@ -52,7 +54,7 @@ class ReservaViewSet(AlcanceViewSetMixin):
     def cancelar(self, request, pk=None):
         reserva = self.get_object()
         try:
-            reserva.cancelar()
+            reserva.cancelar(user=request.user)
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"status": reserva.status})

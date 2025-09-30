@@ -6,6 +6,9 @@ from django_filters import rest_framework as filters
 from core.views import BaseViewSet
 from django.db.models import Q
 from rest_framework.decorators import action
+from rest_framework import status
+from rest_framework.response import Response
+from decimal import Decimal, InvalidOperation
 
 class TicketFilter(filters.FilterSet):
     programado_gte = filters.DateTimeFilter(field_name="programado", lookup_expr="gte")
@@ -46,13 +49,34 @@ class TicketMantenimientoViewSet(AlcanceViewSetMixin):
     @action(detail=True, methods=["post"])
     def generar_cargo(self, request, pk=None):
         ticket = self.get_object()
+        monto_str = request.data.get('monto')
+        if not monto_str:
+            return Response(
+                {"error": "El campo 'monto' es requerido."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
-            cargo = ticket.generar_cargo()
+            # 1. Convierte el string a Decimal aquí, en la vista.
+            monto = Decimal(monto_str)
+            if monto <= 0:
+                raise ValueError("El monto debe ser un número positivo.")
+
+            # 2. Pasa el objeto Decimal al método del modelo.
+            cargo = ticket.generar_cargo(monto=monto, user=request.user)
+
+            # 3. Devuelve el ticket actualizado para mostrar el nuevo precio.
+            ticket_serializer = self.get_serializer(ticket)
+            return Response(ticket_serializer.data, status=status.HTTP_201_CREATED)
+
+        # 4. Captura errores de conversión (ej. "abc") y de lógica (ej. monto negativo).
+        except (ValueError, InvalidOperation) as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=True, methods=["post"])
+    def cancelar(self, request, pk=None):
+        ticket = self.get_object()
+        try:
+            ticket.cancelar_ticket(user=request.user)
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({
-            "cargo_id": cargo.id,
-            "unidad": ticket.unidad.id,
-            "precio": str(ticket.precio),
-            "estado": cargo.estado,
-        })
+        return Response({"status": ticket.estado})

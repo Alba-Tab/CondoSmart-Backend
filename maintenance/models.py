@@ -1,6 +1,7 @@
 from django.db import models
 from core.models import TimeStampedBy
 from decimal import Decimal
+from django.utils import timezone
 
 class Servicio(TimeStampedBy):
     name = models.CharField(max_length=120)
@@ -31,15 +32,29 @@ class TicketMantenimiento(TimeStampedBy):
             models.Index(fields=["cerrado"]),
         ]
         
-    def generar_cargo(self):
+    def generar_cargo(self, monto: Decimal, user):
         from finance.models import Cargo
-        if self.precio <= 0:
-            raise ValueError("El ticket no tiene precio definido.")
-        return Cargo.objects.create(
+        cargo = Cargo.objects.create(
             unidad=self.unidad,
-            origen=self,   # GenericForeignKey
-            concepto="otro",
-            monto=self.precio,
-            saldo=self.precio,
-            descripcion=f"Servicio {self.servicio.name if self.servicio else ''} (Ticket {self.pk})"
+            origen=self,  
+            concepto="otro", 
+            monto=monto,
+            saldo=monto,
+            created_by=user
         )
+
+        # 2. Actualiza el precio del ticket con el monto del cargo
+        self.precio = monto
+        self.estado = 'resuelto'      # Marca el ticket como resuelto
+        self.cerrado = timezone.now() # Establece la fecha de cierre
+        self.updated_by = user
+        self.save()
+
+        return cargo
+    def cancelar_ticket(self, user):
+        if self.estado == "resuelto":
+            raise ValueError("No se puede cancelar un ticket cerrado.")
+        self.estado = "cerrado"
+        self.cerrado = timezone.now()
+        self.updated_by = user
+        self.save()
