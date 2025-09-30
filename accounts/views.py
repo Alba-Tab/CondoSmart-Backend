@@ -7,20 +7,33 @@ from core.views import BaseViewSet
 from core.services import delete_faces_by_external_id
 from .models import CustomUser
 from .serializers import UserSerializer, MeSerializer
+from django_filters import rest_framework as filters
 
 class MeView(APIView):
     permission_classes = [IsAuth]
     def get(self, request):
         return Response(MeSerializer(request.user).data)
+    
+class UserFilter(filters.FilterSet):
+    # Crea un filtro que busca en el campo 'name' de la relación 'groups'
+    groups__name = filters.CharFilter(field_name='groups__name', lookup_expr='exact')
+
+    class Meta:
+        model = CustomUser
+        # Define los campos por los que se puede filtrar
+        fields = ['username', 'first_name', 'last_name', 'email', 'is_active', 'groups__name']
+
 
 class UserViewSet(BaseViewSet):
     queryset = CustomUser.objects.all().order_by('id')
     serializer_class = UserSerializer
     permission_classes = [IsAuth]
-    filterset_fields = ["is_active", "ci"]
+    filterset_class = UserFilter
+    filterset_fields = ["is_active", "ci", "groups__name", "created_at", "updated_at"]
     search_fields = ["username", "ci", "first_name", "last_name"]
     ordering_fields = "__all__"
-        
+    ordering = ['id'] # Ordena por ID por defecto para una paginación consistente
+   
     def get_queryset(self):
         user = self.request.user
         if user.is_staff or user.is_superuser: 

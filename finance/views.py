@@ -20,11 +20,9 @@ class PagoFilter(filters.FilterSet):
 class CargoViewSet(AlcanceViewSetMixin):
     queryset = Cargo.objects.all()
     serializer_class = CargoSerializer
-    permission_classes = [IsAuth]
     filterset_fields = ["unidad","concepto", "descripcion", "periodo","monto", "estado", "created_at", "updated_at"]
     search_fields = ["descripcion"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
+    
     @action(detail=True, methods=["post"])
     def anular(self, request, pk=None):
         """
@@ -43,12 +41,9 @@ class CargoViewSet(AlcanceViewSetMixin):
 class PagoViewSet(BaseViewSet):
     queryset = Pago.objects.select_related("user")
     serializer_class = PagoSerializer
-    permission_classes = [IsAuth]
     filterset_class = PagoFilter
     search_fields = ["user__username", "observacion"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
-    # Admin ve todos, usuario ve solo los suyos
+    
     def get_queryset(self):
         qs = super().get_queryset()
         if self.request.user.is_staff:
@@ -72,9 +67,7 @@ class PagoViewSet(BaseViewSet):
 class PagoCargoViewSet(AlcanceViewSetMixin):
     queryset = PagoCargo.all_objects.all()
     serializer_class = PagoCargoSerializer
-    permission_classes = [IsAuth, AlcancePermission]
+    permission_classes = BaseViewSet.permission_classes + [AlcancePermission]
     filterset_fields = ["pago", "cargo", "monto", "created_at", "updated_at"]
     search_fields = ["pago__user__username", "cargo__descripcion"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
     scope_field = "cargo__unidad"

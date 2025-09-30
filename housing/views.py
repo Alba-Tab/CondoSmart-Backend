@@ -19,30 +19,24 @@ class CondominioViewSet(AlcanceViewSetMixin):
 
     queryset = Condominio.objects.all()
     serializer_class = CondominioSerializer
-    permission_classes = [IsAuth, AlcancePermission]
+    permission_classes = BaseViewSet.permission_classes + [AlcancePermission]
     filterset_fields = ["is_active", "name", "created_at", "updated_at"]
     search_fields = ["name"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
     scope_field = "id"
 
 class UnidadViewSet(AlcanceViewSetMixin):
     queryset = Unidad.objects.all()
     serializer_class = UnidadSerializer
-    permission_classes = [IsAuth, AlcancePermission]
+    permission_classes = BaseViewSet.permission_classes + [AlcancePermission]
     filterset_fields = ["is_active", "code","user", "created_at", "updated_at"]
     search_fields = ["code","user"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
     scope_field = "id" 
 
 class ResidencyViewSet(AlcanceViewSetMixin):
     queryset = Residency.objects.select_related("user","unidad")
     serializer_class = ResidencySerializer
-    permission_classes = [IsAuth, AlcancePermission]
+    permission_classes = BaseViewSet.permission_classes + [AlcancePermission]
     filterset_fields = ["user","unidad","is_owner","tipo_ocupacion","status","start","end"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
     scope_field = "unidad"
 
 class VehiculoViewSet(BaseViewSet):
@@ -87,11 +81,9 @@ class ContratoFilter(filters.FilterSet):
 class ContratoViewSet(AlcanceViewSetMixin):
     queryset = Contrato.all_objects.select_related("unidad", "duenno", "inquilino").all()
     serializer_class = ContratoSerializer
-    permission_classes = [IsAuth, AlcancePermission]
+    permission_classes = BaseViewSet.permission_classes + [AlcancePermission]
     filterset_class = ContratoFilter
     search_fields = ["descripcion"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
     scope_field = "unidad"
     
     @action(detail=True, methods=["post"])

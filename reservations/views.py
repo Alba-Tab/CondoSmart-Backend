@@ -21,20 +21,15 @@ class ReservaFilter(filters.FilterSet):
 class AreaComunViewSet(BaseViewSet):
     queryset = AreaComun.objects.all()
     serializer_class = AreaComunSerializer
-    permission_classes = [IsAuth]
     filterset_fields = ["is_active","requires_deposit","name"]
     search_fields = ["name","descripcion"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
 
 class ReservaViewSet(AlcanceViewSetMixin):
     queryset = Reserva.objects.select_related("unidad","area")
     serializer_class = ReservaSerializer
-    permission_classes = [IsAuth, AlcancePermission]
+    permission_classes = BaseViewSet.permission_classes + [AlcancePermission]
     filterset_class = ReservaFilter
     search_fields = ["notas"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
     scope_field = "unidad"
 
     def perform_create(self, serializer):
@@ -71,9 +66,7 @@ class ReservaViewSet(AlcanceViewSetMixin):
 class SuministroViewSet(BaseViewSet):
     queryset = Suministro.objects.all()
     serializer_class = SuministroSerializer
-    permission_classes = [IsAuth]
+    permission_classes = BaseViewSet.permission_classes + [AlcancePermission]
     filterset_fields = ["name","descripcion","is_active"]
     search_fields = ["name","descripcion"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
     

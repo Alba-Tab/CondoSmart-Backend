@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework import viewsets
 from django.conf import settings
 from .utils import get_client_ip
-
+from core import DefaultPagination, IsAuth
 
 # Create your views here.
 class HealthView(APIView):
@@ -21,6 +21,11 @@ class HealthView(APIView):
         })
         
 class BaseViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuth]
+    pagination_class = DefaultPagination
+    ordering_fields = "__all__" 
+    ordering = ['id']
+    
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user, is_active=True)
 

@@ -16,12 +16,9 @@ from decimal import Decimal
 class VisitaViewSet(BaseViewSet):
     queryset = Visita.objects.all()
     serializer_class = VisitaSerializer
-    permission_classes = [IsAuth]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active", "documento", "created_at", "updated_at"]
     search_fields = ["name", "documento", "telefono"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -49,34 +46,28 @@ class AccesoFilter(dj_filters.FilterSet):
 class AccesoViewSet(AlcanceViewSetMixin):
     queryset = Acceso.objects.select_related("unidad")
     serializer_class = AccesoSerializer
-    permission_classes = [IsAuth, AlcancePermission]
+    permission_classes = BaseViewSet.permission_classes + [AlcancePermission]
 
     filter_backends = [dj_filters.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = AccesoFilter
     search_fields = ["unidad__name", "unidad__code"]
-    ordering_fields = "__all__"
     ordering = ["-created_at"]
-    pagination_class = DefaultPagination
 
 class AccesoEvidenciaViewSet(BaseViewSet):
     queryset = AccesoEvidencia.objects.select_related("acceso", "user", "visita", "vehiculo")
     serializer_class = AccesoEvidenciaSerializer
-    permission_classes = [IsAuth, AlcancePermission]
+    permission_classes = BaseViewSet.permission_classes + [AlcancePermission]
     filterset_fields = ["acceso", "acceso__unidad", "modo", "tipo", "match", "created_at"]
     search_fields = ["user__username", "vehiculo__placa", "visita__name"]
-    ordering_fields = "__all__"
     ordering = ["-created_at"]
-    pagination_class = DefaultPagination
 
 
 class IncidenteViewSet(AlcanceViewSetMixin):
     queryset = Incidente.objects.select_related("unidad")
     serializer_class = IncidenteSerializer
-    permission_classes = [IsAuth, AlcancePermission]
+    permission_classes = BaseViewSet.permission_classes + [AlcancePermission]
     filterset_fields = ["unidad", "user", "estado", "created_at", "updated_at"]
     search_fields = ["titulo", "descripcion"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
     scope_field = "unidad"
     
     @action(detail=True, methods=["post"])

@@ -16,11 +16,9 @@ class ComunicadoFilter(filters.FilterSet):
 class ComunicadoViewSet(BaseViewSet):
     queryset = Comunicado.objects.all()
     serializer_class = ComunicadoSerializer
-    permission_classes = [IsAuth]
     filterset_class = ComunicadoFilter
     search_fields = ["titulo","cuerpo","publicado_at"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
+
 
 class NotificacionFilter(filters.FilterSet):
     publicado_gte = filters.DateTimeFilter(field_name="publicado_at", lookup_expr="gte")
@@ -33,11 +31,8 @@ class NotificacionFilter(filters.FilterSet):
 class NotificacionViewSet(BaseViewSet):
     queryset = Notificacion.objects.select_related("user","comunicado")
     serializer_class = NotificacionSerializer
-    permission_classes = [IsAuth]
     filterset_class = NotificacionFilter
     search_fields = ["titulo","cuerpo","tipo","referencia_id"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
     
     @decorators.action(detail=True, methods=["post"])
     def leer(self, request, pk=None):

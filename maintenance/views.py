@@ -30,20 +30,15 @@ class VigenteEnFilter(filters.Filter):
 class ServicioViewSet(BaseViewSet):
     queryset = Servicio.objects.all()
     serializer_class = ServicioSerializer
-    permission_classes = [IsAuth]
     filterset_fields = ["is_active","name"]
     search_fields = ["name","descripcion"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
 
 class TicketMantenimientoViewSet(AlcanceViewSetMixin):
     queryset = TicketMantenimiento.objects.select_related("unidad","servicio")
     serializer_class = TicketMantenimientoSerializer
-    permission_classes = [IsAuth, AlcancePermission]
+    permission_classes = BaseViewSet.permission_classes + [AlcancePermission]
     filterset_class = TicketFilter
     search_fields = ["titulo","descripcion"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
     scope_field = "unidad"
 
     @action(detail=True, methods=["post"])

@@ -44,3 +44,7 @@ coverage.xml
 build/
 dist/
 *.egg-info/
+
+#ignorar las fotos de data/visita_photos
+data/visita_photos/
+data/dummy_photos/

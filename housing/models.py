@@ -36,7 +36,7 @@ class Unidad(TimeStampedBy):
     
 class Residency(TimeStampedBy):
     STATUS = [("activa","activa"),("inactiva","inactiva")]
-    TIPO = [("propietario","propietario"),("inquilino","inquilino")]
+    TIPO = [("propietario","propietario"),("residente","residente")]
     
     user = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE, related_name="residencias")
     unidad = models.ForeignKey(Unidad, on_delete=models.CASCADE, related_name="residentes")
