@@ -22,7 +22,7 @@ class HealthView(APIView):
         
 class BaseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save(created_by=self.request.user, is_active=True)
 
     def perform_update(self, serializer):
         is_active = serializer.validated_data.get("is_active", serializer.instance.is_active)

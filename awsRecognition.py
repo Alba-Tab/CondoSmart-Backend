@@ -44,10 +44,10 @@ def create_collection():
         print(f"Error al crear la colección: {e}")
 
 # Ejecutar para eliminar la colección
-delete_collection()
+#delete_collection()
 
 # Ejecutar para crear la colección
-create_collection()
+#create_collection()
 
 # Ejecutar para revisar las caras
 list_faces_in_collection()

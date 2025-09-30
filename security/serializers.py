@@ -4,11 +4,13 @@ from core.services import (upload_fileobj, get_presigned_url,
                            detect_plate)
 from .models import Visita, Acceso, Incidente, AccesoEvidencia
 from django.utils.timezone import now, timedelta
+from housing.models import Vehiculo
 
 class VisitaSerializer(serializers.ModelSerializer):
     permitido = serializers.SerializerMethodField()
     photo_url = serializers.SerializerMethodField()
     photo = serializers.ImageField(write_only=True, required=False)
+
     class Meta:
         model = Visita
         fields = [
@@ -34,7 +36,8 @@ class VisitaSerializer(serializers.ModelSerializer):
         if not validated_data.get("fecha_inicio"):
             validated_data["fecha_inicio"] = now()
         visita = super().create(validated_data)
-
+        
+        
         if photo:
             key = f"visitas/visita_{visita.id}.jpg"
             upload_fileobj(photo, key)
@@ -73,13 +76,13 @@ class AccesoEvidenciaSerializer(serializers.ModelSerializer):
     evidencia = serializers.ImageField(write_only=True, required=False)
     evidencia_url = serializers.SerializerMethodField()
     visita_activa = serializers.SerializerMethodField()
-
+    placa_detectada = serializers.SerializerMethodField()
     class Meta:
         model = AccesoEvidencia
         fields = [
             "id", "acceso", "modo", "tipo",
             "user", "visita", "vehiculo",
-            "match","is_active",
+            "match","is_active","placa_detectada", 
             "evidencia", "evidencia_s3", "evidencia_url",
             "visita_activa", "created_at", "updated_at", "is_active"
         ]
@@ -90,9 +93,9 @@ class AccesoEvidenciaSerializer(serializers.ModelSerializer):
         modo = validated_data.get("modo")
 
         acceso_evidencia = super().create(validated_data)
-
+        detected_plate = None
         if evidencia:
-            key = f"accesos/{acceso_evidencia.acceso_id}/{modo}_{evidencia.id}.jpg"
+            key = f"accesos/{acceso_evidencia.acceso.id}/{modo}_{acceso_evidencia.id}.jpg"
             upload_fileobj(evidencia, key)
             acceso_evidencia.evidencia_s3 = key
 
@@ -109,15 +112,15 @@ class AccesoEvidenciaSerializer(serializers.ModelSerializer):
                         acceso_evidencia.visita_id = int(result["external_id"].replace("visita_", ""))
             elif modo == "placa":
                 plate = detect_plate(key)
+                detected_plate = plate
                 if plate:
-                    from housing.models import Vehiculo
                     vehiculo = Vehiculo.objects.filter(placa=plate).first()
                     if vehiculo:
                         acceso_evidencia.match = True
                         acceso_evidencia.tipo = "vehiculo"
                         acceso_evidencia.vehiculo = vehiculo
                         acceso_evidencia.user = vehiculo.responsable
-
+        acceso_evidencia._detected_plate = detected_plate  
         acceso_evidencia.save()
         return acceso_evidencia
     
@@ -145,6 +148,8 @@ class AccesoEvidenciaSerializer(serializers.ModelSerializer):
     
     def get_visita_activa(self, obj):
         return obj.visita.is_active if obj.visita else None
+    def get_placa_detectada(self, obj): 
+        return getattr(obj, "_detected_plate", None)
     
 class AccesoSerializer(serializers.ModelSerializer):
     evidencias = AccesoEvidenciaSerializer(many=True, read_only=True)

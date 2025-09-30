@@ -12,28 +12,28 @@ rekognition = boto3.client(
 
 BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "condosmart-evidencias")
 PLATE_REGEX = re.compile(r"^\d{3,4}[A-Z]{3}$")
+
 def detect_plate(key: str):
-    """
-    Detecta texto en una imagen (placa) usando Amazon Rekognition.
-    :param key: key del archivo en S3
-    :return: string de placa detectada o None
-    """
     try:
         response = rekognition.detect_text(
             Image={"S3Object": {"Bucket": BUCKET_NAME, "Name": key}}
         )
-
         candidates = []
+        alltexts = []
         for text in response["TextDetections"]:
             if text["Type"] == "WORD":  # palabra detectada
                 value = text["DetectedText"].strip().upper()
+                alltexts.append(value)
                 # Filtrar algo que parezca una placa: ej. 6-8 caracteres, mezcla letras y números
                 if PLATE_REGEX.match(value):
                     candidates.append(value)
 
         if candidates:
-            print("Posibles placas:", candidates)
+            print("😀Posibles placas:", candidates)
             return candidates[0]  # tomamos la más probable
+        if alltexts:
+            print("😐No se detectó placa, pero se leyeron textos:", alltexts)
+            return alltexts[0]  # Retornamos el primer texto leído
         return None
 
     except ClientError as e:

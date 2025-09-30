@@ -25,7 +25,7 @@ class UserSerializer(serializers.ModelSerializer):
         groups = validated_data.pop("groups", [])
         password = validated_data.pop("password", None)
         photo = validated_data.pop("photo", None)
-
+        print("photo", photo)
         user = CustomUser(**validated_data)
         if password:
             user.set_password(password)
@@ -33,10 +33,12 @@ class UserSerializer(serializers.ModelSerializer):
             user.set_unusable_password()
         user.save()
 
+        print("CREATE user👤")
         if groups:
+            print("Assigning groups to user👥")
             user.groups.set(groups)
-
         if photo:
+            print("Photo uploaded📸")
             key = f"usuarios/user_{user.pk}.jpg"
             upload_fileobj(photo, key)
             user.photo_key = key
@@ -62,8 +64,9 @@ class UserSerializer(serializers.ModelSerializer):
 
         if password:
             instance.set_password(password)
-
+        print("UPDATE user👤", photo)
         if photo:
+            print("Photo updated📸")
             delete_faces_by_external_id(f"user_{instance.pk}")
             key = f"usuarios/user_{instance.pk}.jpg"
             upload_fileobj(photo, key)
@@ -72,8 +75,10 @@ class UserSerializer(serializers.ModelSerializer):
                 index_face(key, f"user_{instance.pk}")
         elif is_active_changed:
             if not will_be_active:
+                print("Deactivating user👤")
                 delete_faces_by_external_id(f"user_{instance.pk}")
             elif not was_active and will_be_active and instance.photo_key:
+                print("Activating user👤")
                 index_face(instance.photo_key, f"user_{instance.pk}")
 
         instance.save()
