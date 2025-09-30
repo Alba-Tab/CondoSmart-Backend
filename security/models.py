@@ -3,9 +3,8 @@ from core.models import TimeStampedBy
 from django.utils.timezone import now, timedelta
 
 class Visita(TimeStampedBy):
-    is_active = models.BooleanField(default=True, help_text="Marca si la visita está activa o desactivada (soft delete)")
-    nombre = models.CharField(max_length=120)
-    documento = models.CharField(max_length=32)
+    name = models.CharField(max_length=120)
+    documento = models.CharField(max_length=32, unique=True)
     telefono = models.CharField(max_length=24, blank=True)
     photo_key = models.CharField(max_length=255, blank=True, null=True) 
     fecha_inicio = models.DateTimeField(null=True, blank=True)
@@ -15,7 +14,7 @@ class Visita(TimeStampedBy):
         indexes = [models.Index(fields=["documento"])]
 
     def __str__(self) -> str:
-        return f"{self.nombre} ({self.documento})"
+        return f"{self.name} ({self.documento})"
     
     def permitido(self):
         inicio = self.fecha_inicio or self.created_at
@@ -67,4 +66,5 @@ class Incidente(TimeStampedBy):
     class Meta:
         indexes = [models.Index(fields=["unidad","estado","created_at"])]
     def __str__(self) -> str:
-        return f"I{self.titulo}:{self.estado}@U{self.unidad.code}"
+        estado = "" if self.is_active else "(inactivo)"
+        return f"I{self.titulo}:{self.estado}@U{self.unidad.code} {estado}"

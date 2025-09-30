@@ -43,10 +43,11 @@ def create_collection():
     except ClientError as e:
         print(f"Error al crear la colección: {e}")
 
-# Ejecutar para crear la colección
-#create_collection()
-
 # Ejecutar para eliminar la colección
-#delete_collection()
+delete_collection()
+
+# Ejecutar para crear la colección
+create_collection()
+
 # Ejecutar para revisar las caras
 list_faces_in_collection()

@@ -25,3 +25,4 @@ class ContratoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contrato
         fields = '__all__'
+        read_only_fields = ["is_active"] 

@@ -1,9 +1,8 @@
 from django_filters import rest_framework as filters
-from core.permissions import IsAuth, AlcancePermission
-from core.pagination import DefaultPagination
+from core import IsAuth, AlcancePermission, DefaultPagination
+from core.mixins import AlcanceViewSetMixin
 from .models import Cargo, Pago, PagoCargo
 from .serializers import CargoSerializer, PagoSerializer, PagoCargoSerializer
-from core.mixins import AlcanceViewSetMixin
 from core.views import BaseViewSet
 
 class PagoFilter(filters.FilterSet):
@@ -40,7 +39,7 @@ class PagoViewSet(BaseViewSet):
         return qs.filter(user=self.request.user)
 
 class PagoCargoViewSet(AlcanceViewSetMixin):
-    queryset = PagoCargo.objects.all()
+    queryset = PagoCargo.all_objects.all()
     serializer_class = PagoCargoSerializer
     permission_classes = [IsAuth, AlcancePermission]
     filterset_fields = ["pago", "cargo", "monto", "orden", "created_at", "updated_at"]

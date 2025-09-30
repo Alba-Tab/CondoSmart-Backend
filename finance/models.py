@@ -14,7 +14,10 @@ class Cargo(TimeStampedBy):
     periodo = models.DateField(null=True, blank=True)
     estado = models.CharField(max_length=16, choices=ESTADO, default="pendiente")
     saldo = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00')) # Saldo pendiente
-    def __str__(self): return f"{self.concepto} ${self.monto} U{self.unidad.id}"
+    def __str__(self): 
+        estado = "" if self.is_active else "(inactivo)"
+        return f"{self.concepto} ${self.monto} U{self.unidad.id} {estado}"
+
     
 class Pago(TimeStampedBy):
     ESTADO = [("pendiente","pendiente"),("confirmado","confirmado"),("fallido","fallido")]
@@ -27,7 +30,9 @@ class Pago(TimeStampedBy):
     metodo = models.CharField(max_length=64, choices=METODO, default="efectivo")
     comprobante_key = models.CharField(max_length=128, blank=True, null=True) 
     observacion = models.TextField(blank=True)
-    def __str__(self): return f"P{self.pk} U{self.user.id} ${self.monto_total}"
+    def __str__(self): 
+        estado = "" if self.is_active else "(inactivo)"
+        return f"P{self.pk}-U{self.user.id} ${self.monto_total} {estado}"
     
 class PagoCargo(TimeStampedBy):
     pago = models.ForeignKey(Pago, on_delete=models.CASCADE, related_name="aplicaciones")
@@ -36,7 +41,8 @@ class PagoCargo(TimeStampedBy):
     orden = models.PositiveIntegerField(default=1)
     class Meta:
         indexes = [models.Index(fields=["pago","cargo"])]
-    def __str__(self): return f"P{self.pago.pk}-C{self.cargo.pk} ${self.monto}"
-    
+    def __str__(self): 
+        estado = "" if self.is_active else "(inactivo)"
+        return f"P{self.pago.pk}-C{self.cargo.pk} ${self.monto} {estado}"
 
     

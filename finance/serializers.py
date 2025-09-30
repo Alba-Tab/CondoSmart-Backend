@@ -12,7 +12,7 @@ class PagoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pago
         fields = [
-            "id", "user", "fecha", "monto_total", "estado", "metodo",
+            "id", "user", "fecha", "monto_total", "estado", "metodo","is_active",
             "observacion", "comprobante_key", "comprobante", "comprobante_url"
         ]
         read_only_fields = ["comprobante_key"]
@@ -22,7 +22,7 @@ class PagoSerializer(serializers.ModelSerializer):
         pago = super().create(validated_data)
 
         if comprobante:
-            key = f"pagos/{pago.user_id}/pago_{comprobante.id}.jpg"
+            key = f"pagos/{pago.user_id}/pago_{pago.id}.jpg"
             upload_fileobj(comprobante, key)  # directo sin pasar por disco
             pago.comprobante_key = key
             pago.save()
@@ -32,17 +32,17 @@ class PagoSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         comprobante = validated_data.pop("comprobante", None)
 
+        # Actualiza los demás campos
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         if comprobante:
-            key = f"pagos/{instance.user_id}/pago_{comprobante.id}.jpg"
+            key = f"pagos/{instance.user_id}/pago_{instance.id}.jpg"
             upload_fileobj(comprobante, key)
             instance.comprobante_key = key
 
         instance.save()
         return instance
-
     def get_comprobante_url(self, obj):
         if obj.comprobante_key:
             return get_presigned_url(obj.comprobante_key, expires_in=300)

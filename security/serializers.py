@@ -6,17 +6,16 @@ from .models import Visita, Acceso, Incidente, AccesoEvidencia
 from django.utils.timezone import now, timedelta
 
 class VisitaSerializer(serializers.ModelSerializer):
-    active = serializers.BooleanField(source="is_active", read_only=True)
     permitido = serializers.SerializerMethodField()
     photo_url = serializers.SerializerMethodField()
     photo = serializers.ImageField(write_only=True, required=False)
     class Meta:
         model = Visita
         fields = [
-            "id", "nombre", "documento", "telefono", "user",
+            "id", "name", "documento", "telefono", 
             "photo", "photo_key", "photo_url",
-            "fecha_inicio", "dias_permiso",
-            "active", "created_at", "updated_at"
+            "fecha_inicio", "dias_permiso","is_active",
+            "created_at", "updated_at", "permitido"
         ]
         read_only_fields = ["photo_key", "created_at", "updated_at"]
         
@@ -47,9 +46,9 @@ class VisitaSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         photo = validated_data.pop("photo", None)
-        is_deleted_changed = "is_deleted" in validated_data
-        was_deleted = getattr(instance, "is_deleted", False)
-        will_be_deleted = validated_data.get("is_deleted", was_deleted)
+        is_active_changed = "is_active" in validated_data
+        was_active = getattr(instance, "is_active", False)
+        will_be_active = validated_data.get("is_active", was_active)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -59,11 +58,12 @@ class VisitaSerializer(serializers.ModelSerializer):
             key = f"visitas/visita_{instance.id}.jpg"
             upload_fileobj(photo, key)
             instance.photo_key = key
-            index_face(key, f"visita_{instance.id}")
-        elif is_deleted_changed:
-            if will_be_deleted:
+            if instance.is_active:
+                index_face(key, f"visita_{instance.id}")
+        elif is_active_changed:
+            if not will_be_active:
                 delete_faces_by_external_id(f"visita_{instance.id}")
-            elif was_deleted and not will_be_deleted and instance.photo_key:
+            elif not was_active and will_be_active and instance.photo_key:
                 index_face(instance.photo_key, f"visita_{instance.id}")
 
         instance.save()
@@ -79,9 +79,9 @@ class AccesoEvidenciaSerializer(serializers.ModelSerializer):
         fields = [
             "id", "acceso", "modo", "tipo",
             "user", "visita", "vehiculo",
-            "match",
+            "match","is_active",
             "evidencia", "evidencia_s3", "evidencia_url",
-            "visita_activa", "created_at", "updated_at"
+            "visita_activa", "created_at", "updated_at", "is_active"
         ]
         read_only_fields = ["evidencia_s3", "match"]
 
@@ -120,20 +120,38 @@ class AccesoEvidenciaSerializer(serializers.ModelSerializer):
 
         acceso_evidencia.save()
         return acceso_evidencia
+    
+    def update(self, instance, validated_data):
+        is_active_changed = "is_active" in validated_data
+        will_be_active = validated_data.get("is_active", instance.is_active)
 
+        if is_active_changed and not will_be_active:
+            if instance.modo == "face" and instance.evidencia_s3:
+                delete_faces_by_external_id(
+                    f"visita_{instance.visita.id}" if instance.visita else f"user_{instance.user.id}"
+                )
+            instance.delete()
+            return None
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+    
     def get_evidencia_url(self, obj):
         if obj.evidencia_s3:
             return get_presigned_url(obj.evidencia_s3, expires_in=300)
         return None
+    
     def get_visita_activa(self, obj):
-        return obj.visita.is_activa() if obj.visita else None
+        return obj.visita.is_active if obj.visita else None
     
 class AccesoSerializer(serializers.ModelSerializer):
     evidencias = AccesoEvidenciaSerializer(many=True, read_only=True)
 
     class Meta:
         model = Acceso
-        fields = ["id", "unidad", "sentido", "permitido", "created_at", "evidencias"]
+        fields = ["id", "unidad", "sentido", "permitido","is_active", "created_at", "evidencias"]
         read_only_fields = ["created_at"]
 
 class IncidenteSerializer(serializers.ModelSerializer):
@@ -143,7 +161,7 @@ class IncidenteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Incidente
         fields = [
-            "id", "unidad", "user", "titulo", "descripcion", "estado",
+            "id", "unidad", "user", "titulo", "descripcion", "estado","is_active",
             "evidencia_s3", "evidencia", "evidencia_url"
         ]
         read_only_fields = ["evidencia_s3"]

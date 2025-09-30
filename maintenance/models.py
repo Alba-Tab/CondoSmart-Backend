@@ -8,7 +8,8 @@ class Servicio(TimeStampedBy):
     class Meta:
         indexes = [models.Index(fields=["is_active","name"])]
     def __str__(self) -> str:
-        return self.name
+        estado = "" if self.is_active else "(inactivo)"
+        return f"{self.name} {estado}"
 
 class TicketMantenimiento(TimeStampedBy):
     ESTADO = [("abierto","abierto"),("en_progreso","en_progreso"),("resuelto","resuelto"),("cerrado","cerrado")]
@@ -29,7 +30,8 @@ class TicketMantenimiento(TimeStampedBy):
             models.Index(fields=["cerrado"]),
         ]
     def __str__(self) -> str:
-        return f"T{self.pk}:{self.titulo[:20]}"
+        estado = "" if self.is_active else "(inactivo)"
+        return f"T{self.pk}-{self.titulo} U{self.unidad.code} {self.estado} {estado}"
     
 class TarifaServicio(TimeStampedBy):
     servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name="tarifas")
@@ -41,4 +43,5 @@ class TarifaServicio(TimeStampedBy):
         indexes = [models.Index(fields=["servicio","vigente_desde","vigente_hasta"])]
         unique_together = [("servicio","vigente_desde")]
     def __str__(self) -> str:
-        return f"{self.servicio.name} ${self.monto} desde {self.vigente_desde}"
+        estado = "" if self.is_active else "(inactivo)"
+        return f"{self.servicio.name} ${self.monto} desde {self.vigente_desde} {estado}"

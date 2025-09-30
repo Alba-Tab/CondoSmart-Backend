@@ -1,9 +1,12 @@
 from .models import Unidad, Residency, Vehiculo, Mascota, Contrato
 from .serializers import UnidadSerializer, ResidencySerializer, VehiculoSerializer, MascotaSerializer, ContratoSerializer
-from core.permissions import IsAuth, AlcancePermission
-from core.pagination import DefaultPagination
+from core import IsAuth, AlcancePermission, DefaultPagination
 from core.mixins import AlcanceViewSetMixin
 from core.views import BaseViewSet
+from rest_framework import serializers
+from core.services import get_presigned_url
+from django_filters import rest_framework as filters
+
 class UnidadViewSet(AlcanceViewSetMixin):
     queryset = Unidad.objects.all()
     serializer_class = UnidadSerializer
@@ -41,8 +44,8 @@ class MascotaViewSet(BaseViewSet):
     queryset = Mascota.objects.select_related("responsable")
     serializer_class = MascotaSerializer
     permission_classes = [IsAuth, AlcancePermission]
-    filterset_fields = ["tipo","activo","desde","hasta","responsable"]
-    search_fields = ["nombre","raza"]
+    filterset_fields = ["tipo","is_active","desde","hasta","responsable"]
+    search_fields = ["name","raza"]
     ordering_fields = "__all__"
     scope_field = "responsable"
     def get_queryset(self):
@@ -50,13 +53,28 @@ class MascotaViewSet(BaseViewSet):
         if self.request.user.is_staff:
             return qs
         return qs.filter(responsable=self.request.user)
-    
+
+class ContratoFilter(filters.FilterSet):
+    start_gte = filters.DateFilter(field_name="start", lookup_expr="gte")
+    start_lte = filters.DateFilter(field_name="start", lookup_expr="lte")
+    end_gte = filters.DateFilter(field_name="end", lookup_expr="gte")
+    end_lte = filters.DateFilter(field_name="end", lookup_expr="lte")
+
+    class Meta:
+        model = Contrato
+        fields = ["unidad", "duenno", "inquilino", "is_active", "start_gte", "start_lte", "end_gte", "end_lte"]
+
+
 class ContratoViewSet(AlcanceViewSetMixin):
-    
-    queryset = Contrato.objects.select_related("unidad","inquilino")
+    queryset = Contrato.all_objects.select_related("unidad", "duenno", "inquilino").all()
     serializer_class = ContratoSerializer
     permission_classes = [IsAuth, AlcancePermission]
-    filterset_fields = ["unidad","inquilino","duenno","activo","start","end"]
+    filterset_class = ContratoFilter
+    search_fields = ["descripcion"]
     ordering_fields = "__all__"
-    scope_field = "unidad"
+    pagination_class = DefaultPagination
+    def get_documento_url(self, obj):
+        if obj.documento:
+            return get_presigned_url(obj.documento.name, expires_in=300)
+        return None
     

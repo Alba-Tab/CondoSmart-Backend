@@ -10,9 +10,9 @@ class AreaComunAdmin(admin.ModelAdmin):
 
 @admin.register(Suministro)
 class SuministroAdmin(admin.ModelAdmin):
-    list_display = ("id", "nombre", "cantidad_total", "restante")
-    search_fields = ("nombre", "descripcion")
-    ordering = ("nombre",)
+    list_display = ("id", "name", "cantidad_total", "restante")
+    search_fields = ("name", "descripcion")
+    ordering = ("name",)
 
 @admin.register(Reserva)
 class ReservaAdmin(admin.ModelAdmin):
@@ -24,6 +24,6 @@ class ReservaAdmin(admin.ModelAdmin):
 @admin.register(ReservaSuministro)
 class ReservaSuministroAdmin(admin.ModelAdmin):
     list_display = ("id", "reserva", "suministro", "cantidad")
-    search_fields = ("reserva__unidad__code", "suministro__nombre")
+    search_fields = ("reserva__unidad__code", "suministro__name")
     list_filter = ("suministro",)
     ordering = ("reserva",)

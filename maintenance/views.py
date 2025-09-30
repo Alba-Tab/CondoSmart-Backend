@@ -1,13 +1,11 @@
-from rest_framework import viewsets
-from django_filters import rest_framework as filters
-from core.permissions import IsAuth
-from core.pagination import DefaultPagination
-from .models import Servicio, TicketMantenimiento, TarifaServicio
 from .serializers import ServicioSerializer, TicketMantenimientoSerializer, TarifaServicioSerializer
-from django.db.models import Q
+from core import IsAuth, AlcancePermission, DefaultPagination
 from core.mixins import AlcanceViewSetMixin
-from core.permissions import AlcancePermission
+from .models import Servicio, TicketMantenimiento, TarifaServicio
+from django_filters import rest_framework as filters
 from core.views import BaseViewSet
+from django.db.models import Q
+
 class TicketFilter(filters.FilterSet):
     # Por qué: alias legibles para rangos y nulos
     programado_gte = filters.DateTimeFilter(field_name="programado", lookup_expr="gte")

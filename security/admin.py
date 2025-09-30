@@ -4,8 +4,8 @@ from .models import Visita, Acceso, AccesoEvidencia, Incidente
 
 @admin.register(Visita)
 class VisitaAdmin(admin.ModelAdmin):
-    list_display = ("id", "nombre", "documento", "telefono", "created_by", "created_at")
-    search_fields = ("nombre", "documento", "telefono", "created_by__username")
+    list_display = ("id", "name", "documento", "telefono", "created_by", "created_at")
+    search_fields = ("name", "documento", "telefono", "created_by__username")
     list_filter = ("created_by", "created_at")
     ordering = ("-created_at",)
 
@@ -25,7 +25,7 @@ class AccesoEvidenciaAdmin(admin.ModelAdmin):
         "vehiculo", "match", "evidencia_s3", "created_by", "created_at"
     )
     search_fields = (
-        "user__username", "visita__nombre", "vehiculo__placa",
+        "user__username", "visita__name", "vehiculo__placa",
         "acceso__unidad__code"
     )
     list_filter = ("tipo", "modo", "match", "created_by", "created_at")

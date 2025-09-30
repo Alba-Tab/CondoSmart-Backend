@@ -24,10 +24,10 @@ class VehiculoAdmin(admin.ModelAdmin):
 
 @admin.register(Mascota)
 class MascotaAdmin(admin.ModelAdmin):
-    list_display = ("id", "nombre", "tipo", "raza", "responsable", "is_active", "created_by")
-    search_fields = ("nombre", "raza", "responsable__username")
+    list_display = ("id", "name", "tipo", "raza", "responsable", "is_active", "created_by")
+    search_fields = ("name", "raza", "responsable__username")
     list_filter = ("tipo", "is_active", "created_by")
-    ordering = ("nombre",)
+    ordering = ("name",)
 
 @admin.register(Contrato)
 class ContratoAdmin(admin.ModelAdmin):

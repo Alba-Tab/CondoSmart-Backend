@@ -147,7 +147,7 @@ class HousingReportView(APIView):
         # Lista de mascotas activas
         elif tipo == "mascotas":
             data = Mascota.objects.filter(is_active=True).select_related("unidad","responsable").values(
-                "id", "nombre", "tipo", "raza",
+                "id", "name", "tipo", "raza",
                 "unidad__code",
                 "responsable__id", "responsable__username"
             )

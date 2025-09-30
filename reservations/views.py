@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filters
 from core.permissions import IsAuth, AlcancePermission
-from core.pagination import DefaultPagination
+from core import DefaultPagination
 from core.mixins import AlcanceViewSetMixin
 from .models import AreaComun, Reserva, ReservaSuministro, Suministro
 from .serializers import AreaComunSerializer, ReservaSerializer, ReservaSuministroSerializer, SuministroSerializer

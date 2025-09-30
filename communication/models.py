@@ -9,7 +9,8 @@ class Comunicado(TimeStampedBy):
     class Meta:
         indexes = [models.Index(fields=["publicado_at"])]
     def __str__(self) -> str:
-        return f"{self.titulo}"
+        estado = "" if self.is_active else "(inactivo)"
+        return f"{self.titulo} {estado}"
 
 class Notificacion(TimeStampedBy):
     TIPO = [("deuda","deuda"),("multa","multa"),("evento","evento"),("comunicado","comunicado"),("otro","otro")]
@@ -26,4 +27,5 @@ class Notificacion(TimeStampedBy):
     class Meta:
         indexes = [models.Index(fields=["user","leido_at"])]
     def __str__(self) -> str:
-        return f"notif:{self.user.username}:{self.titulo[:20]}"
+        estado = "" if self.is_active else "(inactivo)"
+        return f"notif:{self.user.username}:{self.titulo[:20]} {estado}"

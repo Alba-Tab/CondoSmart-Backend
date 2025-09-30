@@ -1,6 +1,5 @@
 from django_filters import rest_framework as filters
-from core.permissions import IsAuth
-from core.pagination import DefaultPagination
+from core import IsAuth, DefaultPagination
 from .models import Comunicado, Notificacion
 from .serializers import ComunicadoSerializer, NotificacionSerializer
 from rest_framework import decorators, response, status

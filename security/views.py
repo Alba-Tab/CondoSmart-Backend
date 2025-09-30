@@ -1,11 +1,10 @@
-from rest_framework.views import APIView
+
 from rest_framework.response import Response
 from rest_framework import filters
 from django_filters import rest_framework as dj_filters
 from django_filters.rest_framework import DjangoFilterBackend
 
-from core.permissions import IsAuth, AlcancePermission
-from core.pagination import DefaultPagination
+from core import IsAuth, AlcancePermission, DefaultPagination
 from core.services import delete_faces_by_external_id
 from core.mixins import AlcanceViewSetMixin
 from core.views import BaseViewSet
@@ -21,7 +20,7 @@ class VisitaViewSet(BaseViewSet):
     permission_classes = [IsAuth]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active", "documento", "created_at", "updated_at"]
-    search_fields = ["nombre", "documento", "telefono"]
+    search_fields = ["name", "documento", "telefono"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
 
@@ -55,7 +54,7 @@ class AccesoViewSet(AlcanceViewSetMixin):
 
     filter_backends = [dj_filters.DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = AccesoFilter
-    search_fields = ["unidad__nombre", "unidad__code"]
+    search_fields = ["unidad__name", "unidad__code"]
     ordering_fields = "__all__"
     ordering = ["-created_at"]
     pagination_class = DefaultPagination
@@ -65,7 +64,7 @@ class AccesoEvidenciaViewSet(BaseViewSet):
     serializer_class = AccesoEvidenciaSerializer
     permission_classes = [IsAuth, AlcancePermission]
     filterset_fields = ["acceso", "acceso__unidad", "modo", "tipo", "match", "created_at"]
-    search_fields = ["user__username", "vehiculo__placa", "visita__nombre"]
+    search_fields = ["user__username", "vehiculo__placa", "visita__name"]
     ordering_fields = "__all__"
     ordering = ["-created_at"]
     pagination_class = DefaultPagination

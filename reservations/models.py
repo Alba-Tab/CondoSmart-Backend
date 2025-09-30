@@ -7,15 +7,14 @@ class AreaComun(TimeStampedBy):
     descripcion = models.TextField(blank=True)
     requires_deposit = models.BooleanField(default=False)
     deposit_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    is_active = models.BooleanField(default=True)
     
     class Meta:
-        indexes = [models.Index(fields=["is_active","name"])]
+        indexes = [models.Index(fields=["name"])]
     def __str__(self) -> str:
         return self.name
 
-class Suministro(models.Model):
-    nombre = models.CharField(max_length=100)
+class Suministro(TimeStampedBy):
+    name = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True)
     cantidad_total = models.PositiveIntegerField(default=1)
     @property
@@ -24,7 +23,7 @@ class Suministro(models.Model):
         devuelto_total = sum(r.devuelto for r in self.reservasuministros.all()) # type: ignore
         return max(0, self.cantidad_total - entregado_total + devuelto_total)
     def __str__(self):
-        return self.nombre
+        return self.name
 
 class ReservaSuministro(models.Model):
     reserva = models.ForeignKey("Reserva", on_delete=models.CASCADE, related_name="reservasuministros")
@@ -39,7 +38,9 @@ class ReservaSuministro(models.Model):
         return self.reserva.__str__() + " - " + self.suministro.__str__()
 
 class Reserva(TimeStampedBy):
-    STATUS = [("pendiente","pendiente"),("confirmada","confirmada"),("cancelada","cancelada")]
+    # Estado de la reserva pendiente de pago, si se confirmo con el pago, 
+    # y si finalizo o entrego los suministros o se cancelo la reserva
+    STATUS = [("pendiente","pendiente"),("confirmada","confirmada"),("finalizada","finalizada"),("cancelada","cancelada")]
     
     unidad = models.ForeignKey("housing.Unidad", on_delete=models.CASCADE, related_name="reservas")
     area = models.ForeignKey(AreaComun, on_delete=models.CASCADE, related_name="reservas", null=True, blank=True)

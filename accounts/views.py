@@ -14,7 +14,7 @@ class MeView(APIView):
         return Response(MeSerializer(request.user).data)
 
 class UserViewSet(BaseViewSet):
-    queryset = CustomUser.objects.all()
+    queryset = CustomUser.objects.all().order_by('id')
     serializer_class = UserSerializer
     permission_classes = [IsAuth]
     filterset_fields = ["is_active", "ci"]
@@ -30,9 +30,10 @@ class UserViewSet(BaseViewSet):
         
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.delete(user=request.user)
-        delete_faces_by_external_id(f"user_{instance.id}")
-        print("💖DELETE user")
+        if instance.photo_key:
+            delete_faces_by_external_id(f"user_{instance.pk}")
+        instance.delete()
+        print("DELETE user☠️")
         return Response(status=204)
         
 class ChangePasswordView(APIView):

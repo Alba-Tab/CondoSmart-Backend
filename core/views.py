@@ -25,7 +25,9 @@ class BaseViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
 
     def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
-        
-    def perform_destroy(self, instance):
-        instance.delete(user=self.request.user)
+        is_active = serializer.validated_data.get("is_active", serializer.instance.is_active)
+        serializer.save(updated_by=self.request.user, is_active=is_active)
+
+        set_active = getattr(serializer.instance, "set_active", None)
+        if callable(set_active):
+            set_active(is_active, user=self.request.user)

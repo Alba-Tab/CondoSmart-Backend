@@ -7,5 +7,6 @@ class CustomUser(AbstractUser,TimeStampedBy):
     phone = models.CharField(max_length=24, blank=True)
     photo_key = models.CharField(max_length=255, blank=True, null=True)
     def __str__(self) -> str:  # útil en admin
-        return f"{self.username} ({self.ci})"
+        estado= "" if self.is_active else "INACTIVO"
+        return f"{self.username} ({self.ci}) [{estado}]"
 

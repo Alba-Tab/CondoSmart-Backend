@@ -17,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "pk", "username", "password", "first_name", "last_name",
             "email", "ci", "phone", "is_active", "groups", "is_staff",
-            "photo_key", "photo", "photo_url", "is_deleted"
+            "photo_key", "photo", "photo_url"
         ]
         read_only_fields = ("created_by", "photo_key")
 
@@ -41,7 +41,8 @@ class UserSerializer(serializers.ModelSerializer):
             upload_fileobj(photo, key)
             user.photo_key = key
             user.save()
-            index_face(key, external_id=f"user_{user.pk}")
+            if user.is_active:
+                index_face(key, external_id=f"user_{user.pk}")
         return user
 
     def update(self, instance, validated_data):
@@ -49,9 +50,9 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop("password", None)
         photo = validated_data.pop("photo", None)
         
-        is_deleted_changed = "is_deleted" in validated_data
-        was_deleted = getattr(instance, "is_deleted", False) # estado previo
-        will_be_deleted = validated_data.get("is_deleted", was_deleted) # estado nuevo
+        is_active_changed = "is_active" in validated_data
+        was_active = getattr(instance, "is_active", True) # estado previo
+        will_be_active = validated_data.get("is_active", was_active) # estado nuevo
         
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -61,18 +62,18 @@ class UserSerializer(serializers.ModelSerializer):
 
         if password:
             instance.set_password(password)
-            
-        
+
         if photo:
             delete_faces_by_external_id(f"user_{instance.pk}")
             key = f"usuarios/user_{instance.pk}.jpg"
             upload_fileobj(photo, key)
             instance.photo_key = key
-            index_face(key, f"user_{instance.pk}")
-        elif is_deleted_changed:
-            if will_be_deleted:
+            if instance.is_active:
+                index_face(key, f"user_{instance.pk}")
+        elif is_active_changed:
+            if not will_be_active:
                 delete_faces_by_external_id(f"user_{instance.pk}")
-            elif was_deleted and not will_be_deleted and instance.photo_key:
+            elif not was_active and will_be_active and instance.photo_key:
                 index_face(instance.photo_key, f"user_{instance.pk}")
 
         instance.save()

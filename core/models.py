@@ -1,27 +1,20 @@
 from django.db import models
 from django.conf import settings
 
-from django.utils import timezone
 
-class SoftDeleteManager(models.Manager):
+class ActiveManager(models.Manager):
     def get_queryset(self):
-        # por defecto solo devuelve no eliminados
-        return super().get_queryset().filter(is_deleted=False)
+        return super().get_queryset().filter(is_active=True)
 
 class TimeStampedBy(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
-    deleted_at = models.DateTimeField(null=True, blank=True)
-    is_deleted = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     ## Managers
-    objects = SoftDeleteManager()      # solo activos
+    objects = ActiveManager()      # solo activos
     all_objects = models.Manager()     # incluye eliminados
-
-    deleted_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, blank=True,on_delete=models.SET_NULL, 
-        related_name="%(class)s_deleted"
-    )
+    
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, 
         related_name="%(class)s_created"
@@ -33,9 +26,9 @@ class TimeStampedBy(models.Model):
     class Meta:
         abstract = True
         
-    def delete(self, using=None, keep_parents=False, user=None):
-        self.is_deleted = True
-        self.deleted_at = timezone.now()
-        if user:
-            self.deleted_by = user
-        self.save(update_fields=["is_deleted", "deleted_at", "deleted_by"])
+    def set_active(self, active: bool, user=None):
+        if active != self.is_active:
+            self.is_active = active
+            if user:
+                self.updated_by = user
+            self.save(update_fields=["is_active", "updated_by", "updated_at"])

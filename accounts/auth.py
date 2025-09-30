@@ -24,11 +24,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             user = authenticate(username=u.username, password=password)
             if not user:
                 raise serializers.ValidationError({"detail":"Credenciales inválidas"})
+        if not user.is_active:
+            raise serializers.ValidationError({"detail": "Usuario no activo"})
+        
         data = super().validate({"username": user.username, "password": password})
         data["user"] = {# type: ignore
             "pk": user.pk,
             "username": user.username,
-            "ci": user.ci, # type: ignore
+            "ci": getattr(user, "ci", None),
             "first_name": user.first_name,
             "last_name": user.last_name,
             "email": user.email,

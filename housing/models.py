@@ -3,13 +3,12 @@ from core.models import TimeStampedBy
 
 class Unidad(TimeStampedBy):
     code = models.CharField(max_length=32)
-    is_active = models.BooleanField(default=True)
     user = models.ForeignKey("accounts.CustomUser", on_delete=models.PROTECT, 
                              related_name="duenno", null=True, blank=True)
 
     def __str__(self):
-        owner = self.user or "sin dueño"
-        estado = "active" if self.is_active else "inactive"
+        owner = self.user or "Condominio"
+        estado = "" if self.is_active else "inactive"
         return f"{self.code} Dueño: {owner} ({estado})"
     
 class Residency(TimeStampedBy):
@@ -26,9 +25,10 @@ class Residency(TimeStampedBy):
     
     class Meta:
         indexes = [models.Index(fields=["unidad","user","status"])]
-        unique_together = [("user","unidad","start")] 
+        unique_together = [("user","unidad")] 
     def __str__(self): 
-        return f"{self.user.username}@{self.unidad.code} ({self.tipo_ocupacion})"
+        estado = "" if self.is_active else "(inactivo)"
+        return f"U{self.unidad.code}-R{self.user.username} ({self.tipo_ocupacion}) {estado}"
     
 
 class Vehiculo(TimeStampedBy):
@@ -39,21 +39,22 @@ class Vehiculo(TimeStampedBy):
     color = models.CharField(max_length=32, blank=True)
     observacion = models.TextField(blank=True)
     def __str__(self): 
-        return f"{self.placa} ({self.marca} {self.color})"
+        if self.responsable:
+            return f"{self.placa} ({self.marca} {self.color}) Dueño : {self.responsable.first_name}"
+        return f"{self.placa} ({self.marca} {self.color}) Externo"
     
 class Mascota(TimeStampedBy):
     TIPO = [("perro","perro"),("gato","gato"),("pez","pez"),("hamster","hamster"),("otro","otro")]
-    nombre = models.CharField(max_length=120)
+    name = models.CharField(max_length=120)
     raza = models.CharField(max_length=120, blank=True)
     tipo = models.CharField(max_length=120, blank=True)
-    is_active = models.BooleanField(default=True)
     desde = models.DateField(null=True, blank=True)
     hasta = models.DateField(null=True, blank=True)
     responsable = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE, related_name="mascotas", null=True, blank=True)
     def __str__(self): 
         if self.responsable:
-            return f"{self.nombre} ({self.tipo} {self.raza}) Dueño : {self.responsable.first_name}"
-        return f"{self.nombre} ({self.tipo} {self.raza}) Dueño : Sin responsable" 
+            return f"{self.name} ({self.tipo} {self.raza}) Dueño : {self.responsable.first_name}"
+        return f"{self.name} ({self.tipo} {self.raza}) Dueño : Sin responsable" 
     
 class Contrato (TimeStampedBy):
     unidad = models.ForeignKey(Unidad, on_delete=models.CASCADE, related_name="contratos")
@@ -63,9 +64,10 @@ class Contrato (TimeStampedBy):
     start = models.DateField()
     end = models.DateField(null=True, blank=True)
     documento = models.FileField(upload_to="contratos/", null=True, blank=True)
-    is_active = models.BooleanField(default=True)
     monto_mensual = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
     class Meta:
-        indexes = [models.Index(fields=["unidad","inquilino","is_active"])]
-    def __str__(self): return f"C-{self.pk} Unidad: {self.unidad.code}" 
+        indexes = [models.Index(fields=["unidad","inquilino"])]
+    def __str__(self): 
+        estado = "" if self.is_active else "(inactivo)"
+        return f"U{self.unidad.code}-C{self.pk} D:{self.duenno} I:{self.inquilino} {estado}"
