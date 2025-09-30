@@ -8,8 +8,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from utils import enviar_post, enviar_get
-
+from utils import enviar_post, enviar_get, get_token
+headers = get_token()
 # 2. Función para generar placas con el formato específico
 def generar_placa_aleatoria():
     """Genera una placa con formato NNNLLL o NNNNLLL."""
@@ -28,7 +28,7 @@ def poblar_vehiculos(n=100):
     print("Obteniendo lista de residentes...")
     try:
         # Obtenemos todas las residencias para asignar vehículos
-        residencias_resp = enviar_get("/residencias/")
+        residencias_resp = enviar_get("/residencias/", headers=headers)
         if not residencias_resp or 'results' not in residencias_resp:
             print("Error: No se pudo obtener la lista de residencias.")
             return
@@ -55,8 +55,8 @@ def poblar_vehiculos(n=100):
             "unidad": residencia_aleatoria['unidad'],
             "responsable": residencia_aleatoria['user']
         }
-        
-        resp = enviar_post("/vehiculos/", data=data)
+
+        resp = enviar_post("/vehiculos/", headers=headers, data=data)
         if not resp is None:
             print(f"  Vehículo {i+1}/{n} creado: {resp.get('placa', 'Error')}")
 

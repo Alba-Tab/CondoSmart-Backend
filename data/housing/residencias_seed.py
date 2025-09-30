@@ -1,4 +1,4 @@
-from utils import enviar_post, enviar_get
+from utils import enviar_post, enviar_get, get_token
 from faker import Faker
 import random
 
@@ -9,7 +9,8 @@ def poblar_residencias():
     print("Obteniendo lista de usuarios del grupo 'user'...")
     try:
         # Asumimos que tu API de usuarios permite filtrar por grupo
-        usuarios_resp = enviar_get("/users/?groups__name=user")
+        headers = get_token()
+        usuarios_resp = enviar_get("/users/?groups__name=user", headers=headers)
         if not usuarios_resp or 'results' not in usuarios_resp:
             print("Error: No se pudo obtener la lista de usuarios o la respuesta no es válida.")
             print("Respuesta recibida:", usuarios_resp)
@@ -53,7 +54,7 @@ def poblar_residencias():
                 "status": "activa",
                 "start": "2025-01-01"
             }
-            resp = enviar_post("/residencias/", data=data_owner)
+            resp = enviar_post("/residencias/", headers=headers, data=data_owner)
             print(f"  Propietario {owner_id} asignado a unidad {unidad_id}: {resp}")
 
         # Asigna los otros residentes
@@ -70,7 +71,7 @@ def poblar_residencias():
                 "status": "activa",
                 "start": "2025-01-01"
             }
-            resp = enviar_post("/residencias/", data=data_residente)
+            resp = enviar_post("/residencias/", headers=headers, data=data_residente)
             print(f"  Residente {residente_id} asignado a unidad {unidad_id}: {resp}")
 
 if __name__ == "__main__":

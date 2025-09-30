@@ -20,9 +20,8 @@ def get_token():
         return {"Authorization": f"Bearer {token}"}
     else:
         raise Exception(f"Error al obtener token: {resp.status_code} {resp.text}")
-    
-def enviar_post(path, data=None, files=None):
-    headers = get_token()
+
+def enviar_post(path, headers, data=None, files=None):
     resp = requests.post(f"{API_BASE}{path}", data=data, files=files, json=data if files is None else None, headers=headers)
     if resp.status_code in (200, 201):
         return resp.json()
@@ -30,8 +29,7 @@ def enviar_post(path, data=None, files=None):
         print(f"Error {resp.status_code} → {resp.text}")
         return None
 
-def enviar_get(path, params=None):
-    headers = get_token()
+def enviar_get(path, headers, params=None):
     resp = requests.get(f"{API_BASE}{path}", params=params, headers=headers)
     if resp.status_code == 200:
         return resp.json()

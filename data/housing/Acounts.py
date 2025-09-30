@@ -2,14 +2,15 @@ import os
 import random
 from faker import Faker
 from utils import enviar_post
+import requests
+from utils import get_token
 
 fake = Faker("es_ES")
-
-# --- Hacemos la ruta más robusta ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGES_DIR = os.path.join(BASE_DIR, 'dummy_photos')
 
 def poblar_usuarios(n=5):
+    
     # Obtenemos la lista de fotos disponibles
     try:
         fotos = [f for f in os.listdir(IMAGES_DIR) if f.lower().endswith((".jpg", ".png"))]
@@ -17,6 +18,7 @@ def poblar_usuarios(n=5):
         fotos = [] # Si el directorio no existe, la lista de fotos está vacía
 
     for i in range(n):
+        headers = get_token()
         print(f"Creando usuario {i+1}/{n}...")
         data = {
             "username": fake.unique.user_name(),
@@ -40,7 +42,7 @@ def poblar_usuarios(n=5):
             
             with open(img_path, "rb") as f:
                 files = {"photo": (foto_elegida, f.read())}
-                resp = enviar_post("/users/", data=data, files=files)
+                resp = enviar_post("/users/", headers=headers, data=data, files=files)
                 print("  Creado con foto:", resp)
             try:
                 os.remove(img_path)
@@ -49,7 +51,7 @@ def poblar_usuarios(n=5):
                 print(f"  Error al eliminar la foto: {e}")
         else:
             print("  No hay más fotos disponibles. Creando usuario sin foto.")
-            resp = enviar_post("/users/", data=data)
+            resp = enviar_post("/users/", headers=headers, data=data)
             print("  Creado sin foto:", resp)
 
 
