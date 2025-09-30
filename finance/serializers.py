@@ -3,7 +3,12 @@ from core.services import upload_fileobj, get_presigned_url
 from .models import Pago, Cargo, PagoCargo
 
 class CargoSerializer(serializers.ModelSerializer):
-    class Meta: model = Cargo; fields = "__all__"
+    origen_type = serializers.CharField(source="content_type.model", read_only=True)
+    origen_id = serializers.IntegerField(source="object_id", read_only=True)
+
+    class Meta:
+        model = Cargo
+        fields = "__all__"
 
 class PagoSerializer(serializers.ModelSerializer):
     comprobante = serializers.FileField(write_only=True, required=False) 

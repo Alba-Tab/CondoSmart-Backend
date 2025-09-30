@@ -2,9 +2,10 @@ from django_filters import rest_framework as filters
 from core.permissions import IsAuth, AlcancePermission
 from core import DefaultPagination
 from core.mixins import AlcanceViewSetMixin
-from .models import AreaComun, Reserva, ReservaSuministro, Suministro
-from .serializers import AreaComunSerializer, ReservaSerializer, ReservaSuministroSerializer, SuministroSerializer
+from .models import AreaComun, Reserva, Suministro
+from .serializers import AreaComunSerializer, ReservaSerializer, SuministroSerializer
 from core.views import BaseViewSet
+from rest_framework.decorators import action
 
 class ReservaFilter(filters.FilterSet):
     start_gte = filters.DateTimeFilter(field_name="start", lookup_expr="gte")
@@ -34,6 +35,37 @@ class ReservaViewSet(AlcanceViewSetMixin):
     pagination_class = DefaultPagination
     scope_field = "unidad"
 
+    def perform_create(self, serializer):
+        reserva = serializer.save()
+        reserva.create_cargo_if_required()
+        
+    @action(detail=True, methods=["post"])
+    def confirmar(self, request, pk=None):
+        reserva = self.get_object()
+        try:
+            reserva.confirmar()
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status": reserva.status})
+    
+    @action(detail=True, methods=["post"])
+    def cancelar(self, request, pk=None):
+        reserva = self.get_object()
+        try:
+            reserva.cancelar()
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status": reserva.status})
+
+    @action(detail=True, methods=["post"])
+    def finalizar(self, request, pk=None):
+        reserva = self.get_object()
+        try:
+            reserva.finalizar()
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"status": reserva.status})
+    
 class SuministroViewSet(BaseViewSet):
     queryset = Suministro.objects.all()
     serializer_class = SuministroSerializer
@@ -43,11 +75,3 @@ class SuministroViewSet(BaseViewSet):
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
     
-class ReservaSuministroViewSet(AlcanceViewSetMixin):
-    queryset = ReservaSuministro.objects.select_related("reserva","suministro")
-    serializer_class = ReservaSuministroSerializer
-    permission_classes = [IsAuth, AlcancePermission]
-    filterset_fields = ["reserva","suministro","cantidad"]
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
-    scope_field = "reserva__unidad"

@@ -4,9 +4,9 @@ from core.mixins import AlcanceViewSetMixin
 from .models import Cargo, Pago, PagoCargo
 from .serializers import CargoSerializer, PagoSerializer, PagoCargoSerializer
 from core.views import BaseViewSet
+from rest_framework.decorators import action
 
 class PagoFilter(filters.FilterSet):
-    # aliases amigables
     fecha_gte = filters.DateTimeFilter(field_name="fecha", lookup_expr="gte")
     fecha_lte = filters.DateTimeFilter(field_name="fecha", lookup_expr="lte")
 
@@ -37,6 +37,20 @@ class PagoViewSet(BaseViewSet):
         if self.request.user.is_staff:
             return qs
         return qs.filter(user=self.request.user)
+    @action(detail=True, methods=["post"])
+    def confirmar(self, request, pk=None):
+        pago = self.get_object()
+        try:
+            pago.confirmar()
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(PagoSerializer(pago).data)
+
+    @action(detail=True, methods=["post"])
+    def fallido(self, request, pk=None):
+        pago = self.get_object()
+        pago.marcar_fallido()
+        return Response(PagoSerializer(pago).data)
 
 class PagoCargoViewSet(AlcanceViewSetMixin):
     queryset = PagoCargo.all_objects.all()
