@@ -1,6 +1,6 @@
 from django.db import models
 from core.models import TimeStampedBy
-
+from decimal import Decimal
 class Condominio(TimeStampedBy):
     DIRECCION_TIPO = [("vertical","departamento"), ("horizontal","casa")]
 
@@ -91,3 +91,22 @@ class Contrato (TimeStampedBy):
     def __str__(self): 
         estado = "" if self.is_active else "(inactivo)"
         return f"U{self.unidad.code}-C{self.pk} D:{self.duenno} I:{self.inquilino} {estado}"
+
+    def generar_cargo_mensual(self, periodo, monto=None):
+        from finance.models import Cargo
+        monto = monto or self.monto_mensual or Decimal("0.00")
+
+        # evitar duplicados
+        if Cargo.objects.filter(origen=self, periodo=periodo).exists():
+            return None  
+
+        cargo = Cargo.objects.create(
+            unidad=self.unidad,
+            origen=self,
+            concepto="cuota",
+            descripcion=f"Expensa mensual {periodo:%Y-%m} (Contrato {self.pk})",
+            monto=monto,
+            saldo=monto,
+            periodo=periodo,
+        )
+        return cargo

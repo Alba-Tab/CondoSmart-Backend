@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import filters
 from django_filters import rest_framework as dj_filters
 from django_filters.rest_framework import DjangoFilterBackend
-
+from rest_framework.decorators import action
 from core import IsAuth, AlcancePermission, DefaultPagination
 from core.services import delete_faces_by_external_id
 from core.mixins import AlcanceViewSetMixin
@@ -79,4 +79,22 @@ class IncidenteViewSet(AlcanceViewSetMixin):
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
     scope_field = "unidad"
+    
+    @action(detail=True, methods=["post"])
+    def generar_cargo(self, request, pk=None):
+        incidente = self.get_object()
+        monto = request.data.get("monto")
+        if not monto:
+            return Response({"error": "Debe indicar el monto de la multa"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            cargo = incidente.generar_cargo(Decimal(monto))
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            "cargo_id": cargo.id,
+            "estado": cargo.estado,
+            "saldo": str(cargo.saldo),
+        })
     

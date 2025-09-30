@@ -15,7 +15,7 @@ class Cargo(TimeStampedBy):
     origen = GenericForeignKey("content_type", "object_id")
     
     concepto = models.CharField(max_length=16, choices=TIPO, default="cuota")
-    descripcion = models.CharField(max_length=200, blank=True)
+    descripcion = models.CharField(max_length=200, blank=True, null=True)
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     estado = models.CharField(max_length=16, choices=ESTADO, default="pendiente")
     saldo = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00')) 

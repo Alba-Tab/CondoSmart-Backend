@@ -1,13 +1,13 @@
-from .serializers import ServicioSerializer, TicketMantenimientoSerializer, TarifaServicioSerializer
+from .serializers import ServicioSerializer, TicketMantenimientoSerializer
 from core import IsAuth, AlcancePermission, DefaultPagination
 from core.mixins import AlcanceViewSetMixin
-from .models import Servicio, TicketMantenimiento, TarifaServicio
+from .models import Servicio, TicketMantenimiento
 from django_filters import rest_framework as filters
 from core.views import BaseViewSet
 from django.db.models import Q
+from rest_framework.decorators import action
 
 class TicketFilter(filters.FilterSet):
-    # Por qué: alias legibles para rangos y nulos
     programado_gte = filters.DateTimeFilter(field_name="programado", lookup_expr="gte")
     programado_lte = filters.DateTimeFilter(field_name="programado", lookup_expr="lte")
     cerrado_isnull = filters.BooleanFilter(field_name="cerrado", lookup_expr="isnull")
@@ -23,16 +23,6 @@ class VigenteEnFilter(filters.Filter):
             return qs
         return qs.filter(vigente_desde__lte=value).filter(
             Q(vigente_hasta__isnull=True) | Q(vigente_hasta__gte=value))
-
-class TarifaFilter(filters.FilterSet):
-    vigente_desde_gte = filters.DateFilter(field_name="vigente_desde", lookup_expr="gte")
-    vigente_desde_lte = filters.DateFilter(field_name="vigente_desde", lookup_expr="lte")
-    vigente_hasta_isnull = filters.BooleanFilter(field_name="vigente_hasta", lookup_expr="isnull")
-    vigente_en = VigenteEnFilter(field_name="vigente_desde")
-
-    class Meta:
-        model = TarifaServicio
-        fields = ["servicio","vigente_desde_gte","vigente_desde_lte","vigente_hasta_isnull","vigente_en"]
 
 class ServicioViewSet(BaseViewSet):
     queryset = Servicio.objects.all()
@@ -53,10 +43,16 @@ class TicketMantenimientoViewSet(AlcanceViewSetMixin):
     pagination_class = DefaultPagination
     scope_field = "unidad"
 
-class TarifaServicioViewSet(BaseViewSet):
-    queryset = TarifaServicio.objects.select_related("servicio")
-    serializer_class = TarifaServicioSerializer
-    permission_classes = [IsAuth]
-    filterset_class = TarifaFilter
-    ordering_fields = "__all__"
-    pagination_class = DefaultPagination
+    @action(detail=True, methods=["post"])
+    def generar_cargo(self, request, pk=None):
+        ticket = self.get_object()
+        try:
+            cargo = ticket.generar_cargo()
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            "cargo_id": cargo.id,
+            "unidad": ticket.unidad.id,
+            "precio": str(ticket.precio),
+            "estado": cargo.estado,
+        })

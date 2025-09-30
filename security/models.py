@@ -1,6 +1,7 @@
 from django.db import models
 from core.models import TimeStampedBy
 from django.utils.timezone import now, timedelta
+from decimal import Decimal
 
 class Visita(TimeStampedBy):
     name = models.CharField(max_length=120)
@@ -68,3 +69,15 @@ class Incidente(TimeStampedBy):
     def __str__(self) -> str:
         estado = "" if self.is_active else "(inactivo)"
         return f"I{self.titulo}:{self.estado}@U{self.unidad.code} {estado}"
+    def generar_cargo(self, monto: Decimal, descripcion: str = ""):
+        from finance.models import Cargo  
+        descripcion = descripcion if descripcion != "" else f"Multa por incidente {self.pk} - {self.titulo}"
+        cargo = Cargo.objects.create(
+            unidad=self.unidad,
+            origen=self,  
+            concepto="multa",
+            monto=monto,
+            saldo=monto,
+            descripcion=descripcion,
+        )
+        return cargo

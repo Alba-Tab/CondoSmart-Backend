@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Servicio, TicketMantenimiento, TarifaServicio
+from .models import Servicio, TicketMantenimiento
 
 class ServicioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,7 +11,3 @@ class TicketMantenimientoSerializer(serializers.ModelSerializer):
         model = TicketMantenimiento
         fields = "__all__"
 
-class TarifaServicioSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TarifaServicio
-        fields = "__all__"

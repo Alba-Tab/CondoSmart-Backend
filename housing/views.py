@@ -6,7 +6,11 @@ from core.views import BaseViewSet
 from rest_framework import serializers
 from core.services import get_presigned_url
 from django_filters import rest_framework as filters
-
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from datetime import date
+from django.db import models
 
 class CondominioViewSet(AlcanceViewSetMixin):
 
@@ -85,6 +89,57 @@ class ContratoViewSet(AlcanceViewSetMixin):
     search_fields = ["descripcion"]
     ordering_fields = "__all__"
     pagination_class = DefaultPagination
+    scope_field = "unidad"
+    
+    @action(detail=True, methods=["post"])
+    def generar_cargo(self, request, pk=None):
+        contrato = self.get_object()
+        periodo = request.data.get("periodo")
+        if not periodo:
+            return Response({"error": "Debe enviar un periodo (YYYY-MM-DD)"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            from datetime import datetime
+            periodo_date = datetime.strptime(periodo, "%Y-%m-%d").date()
+            cargo = contrato.generar_cargo_mensual(periodo_date)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            "cargo_id": cargo.id,
+            "unidad": contrato.unidad.id,
+            "periodo": str(cargo.periodo),
+            "monto": str(cargo.monto),
+            "estado": cargo.estado,
+        })
+    @action(detail=False, methods=["post"])
+    def generar_cargos_mes(self, request):
+        """Genera cargos mensuales de TODOS los contratos activos para el mes actual"""
+        hoy = date.today()
+        periodo = date(hoy.year, hoy.month, 1)
+
+        contratos = Contrato.objects.filter(
+            is_active=True,
+            start__lte=periodo
+        ).filter(
+            models.Q(end__isnull=True) | models.Q(end__gte=periodo)
+        )
+
+        total_generados = 0
+        cargos_ids = []
+
+        for contrato in contratos:
+            cargo = contrato.generar_cargo_mensual(periodo)
+            if cargo:
+                total_generados += 1
+                cargos_ids.append(cargo.pk)
+
+        return Response({
+            "total_generados": total_generados,
+            "cargos_ids": cargos_ids,
+            "periodo": str(periodo)
+        })
+          
     def get_documento_url(self, obj):
         if obj.documento:
             return get_presigned_url(obj.documento.name, expires_in=300)

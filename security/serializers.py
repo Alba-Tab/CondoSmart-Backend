@@ -162,25 +162,29 @@ class AccesoSerializer(serializers.ModelSerializer):
 class IncidenteSerializer(serializers.ModelSerializer):
     evidencia = serializers.ImageField(write_only=True, required=False)
     evidencia_url = serializers.SerializerMethodField()
-
+    monto_multa = serializers.DecimalField(
+        max_digits=10, decimal_places=2, required=False, write_only=True
+    )
     class Meta:
         model = Incidente
         fields = [
             "id", "unidad", "user", "titulo", "descripcion", "estado","is_active",
-            "evidencia_s3", "evidencia", "evidencia_url"
+            "evidencia_s3", "evidencia", "evidencia_url", "monto_multa"
         ]
         read_only_fields = ["evidencia_s3"]
 
     def create(self, validated_data):
         evidencia = validated_data.pop("evidencia", None)
         incidente = super().create(validated_data)
-
+        monto_multa = validated_data.pop("monto_multa", None)
+        
         if evidencia:
             key = f"incidentes/incidente_{incidente.id}.jpg"
             upload_fileobj(evidencia, key)   
             incidente.evidencia_s3 = key
             incidente.save()
-
+        if monto_multa:
+            incidente.generar_cargo(monto=monto_multa)
         return incidente
 
     def update(self, instance, validated_data):

@@ -1,5 +1,6 @@
 from django.db import models
 from core.models import TimeStampedBy
+from decimal import Decimal
 
 class Servicio(TimeStampedBy):
     name = models.CharField(max_length=120)
@@ -15,33 +16,30 @@ class TicketMantenimiento(TimeStampedBy):
     ESTADO = [("abierto","abierto"),("en_progreso","en_progreso"),("resuelto","resuelto"),("cerrado","cerrado")]
 
     unidad = models.ForeignKey("housing.Unidad", on_delete=models.CASCADE, related_name="tickets_mant")
-    servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, null=True, related_name="tickets")
+    servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name="tickets")
     
     titulo = models.CharField(max_length=160)
     descripcion = models.TextField(blank=True)
     estado = models.CharField(max_length=16, choices=ESTADO, default="abierto")
     programado = models.DateTimeField(null=True, blank=True) 
     cerrado = models.DateTimeField(null=True, blank=True)
-    
+    precio = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     class Meta:
         indexes = [
             models.Index(fields=["unidad","estado"]),
             models.Index(fields=["programado"]),
             models.Index(fields=["cerrado"]),
         ]
-    def __str__(self) -> str:
-        estado = "" if self.is_active else "(inactivo)"
-        return f"T{self.pk}-{self.titulo} U{self.unidad.code} {self.estado} {estado}"
-    
-class TarifaServicio(TimeStampedBy):
-    servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name="tarifas")
-    descripcion = models.CharField(max_length=160, blank=True)
-    monto = models.DecimalField(max_digits=10, decimal_places=2)
-    vigente_desde = models.DateField()
-    vigente_hasta = models.DateField(null=True, blank=True)
-    class Meta:
-        indexes = [models.Index(fields=["servicio","vigente_desde","vigente_hasta"])]
-        unique_together = [("servicio","vigente_desde")]
-    def __str__(self) -> str:
-        estado = "" if self.is_active else "(inactivo)"
-        return f"{self.servicio.name} ${self.monto} desde {self.vigente_desde} {estado}"
+        
+    def generar_cargo(self):
+        from finance.models import Cargo
+        if self.precio <= 0:
+            raise ValueError("El ticket no tiene precio definido.")
+        return Cargo.objects.create(
+            unidad=self.unidad,
+            origen=self,   # GenericForeignKey
+            concepto="otro",
+            monto=self.precio,
+            saldo=self.precio,
+            descripcion=f"Servicio {self.servicio.name if self.servicio else ''} (Ticket {self.pk})"
+        )
