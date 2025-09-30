@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from .models import Unidad, Residency, Vehiculo, Mascota, Contrato
+from .models import Unidad, Residency, Vehiculo, Mascota, Contrato, Condominio
+
+class CondominioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Condominio
+        fields = '__all__'
 
 class UnidadSerializer(serializers.ModelSerializer):
     class Meta:

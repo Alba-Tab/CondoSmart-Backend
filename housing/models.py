@@ -1,15 +1,35 @@
 from django.db import models
 from core.models import TimeStampedBy
 
+class Condominio(TimeStampedBy):
+    DIRECCION_TIPO = [("vertical","departamento"), ("horizontal","casa")]
+
+    direccion = models.CharField(max_length=200)
+    name = models.CharField(max_length=120)
+    tipo = models.CharField(max_length=20, choices=DIRECCION_TIPO)
+
+    def __str__(self):
+        estado = "" if self.is_active else "(inactivo)"
+        return f"{self.name} - {self.direccion} {estado}"
+
 class Unidad(TimeStampedBy):
+    condominio = models.ForeignKey(Condominio, on_delete=models.CASCADE, related_name="unidades")
+    direccion = models.CharField(max_length=200)
     code = models.CharField(max_length=32)
     user = models.ForeignKey("accounts.CustomUser", on_delete=models.PROTECT, 
                              related_name="duenno", null=True, blank=True)
+    piso = models.IntegerField(null=True, blank=True)  # Solo para departamentos
+    manzano = models.CharField(max_length=10, blank=True, null=True)  # Solo para casas
+    @property
+    def tipo(self):
+        return self.condominio.tipo  # Se hereda del condominio
 
     def __str__(self):
-        owner = self.user or "Condominio"
-        estado = "" if self.is_active else "inactive"
-        return f"{self.code} Dueño: {owner} ({estado})"
+        estado = "" if self.is_active else "(inactivo)"
+        if self.tipo == "departamento":
+            return f"Piso {self.piso} - Depto {self.code} ({estado})"
+        else:
+            return f"Manzano {self.manzano} - Casa {self.code} ({estado})"
     
 class Residency(TimeStampedBy):
     STATUS = [("activa","activa"),("inactiva","inactiva")]

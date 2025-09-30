@@ -1,11 +1,23 @@
-from .models import Unidad, Residency, Vehiculo, Mascota, Contrato
-from .serializers import UnidadSerializer, ResidencySerializer, VehiculoSerializer, MascotaSerializer, ContratoSerializer
+from .models import Unidad, Residency, Vehiculo, Mascota, Contrato, Condominio
+from .serializers import UnidadSerializer, ResidencySerializer, VehiculoSerializer, MascotaSerializer, ContratoSerializer, CondominioSerializer
 from core import IsAuth, AlcancePermission, DefaultPagination
 from core.mixins import AlcanceViewSetMixin
 from core.views import BaseViewSet
 from rest_framework import serializers
 from core.services import get_presigned_url
 from django_filters import rest_framework as filters
+
+
+class CondominioViewSet(AlcanceViewSetMixin):
+
+    queryset = Condominio.objects.all()
+    serializer_class = CondominioSerializer
+    permission_classes = [IsAuth, AlcancePermission]
+    filterset_fields = ["is_active", "name", "created_at", "updated_at"]
+    search_fields = ["name"]
+    ordering_fields = "__all__"
+    pagination_class = DefaultPagination
+    scope_field = "id"
 
 class UnidadViewSet(AlcanceViewSetMixin):
     queryset = Unidad.objects.all()
