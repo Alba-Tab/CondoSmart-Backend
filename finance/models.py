@@ -65,10 +65,6 @@ class Pago(TimeStampedBy):
         total = pagocargo.aggregate(total=Sum('monto'))['total'] 
         return total or Decimal('0.00')
     
-    def __str__(self): 
-        estado = "" if self.is_active else "(inactivo)"
-        return f"P{self.pk}-U{self.user.id} ${self.monto_total} {estado}"
-    
     def confirmar(self):
         if self.estado != "pendiente":
             raise ValueError("Solo pagos pendientes pueden confirmarse.")
@@ -77,6 +73,7 @@ class Pago(TimeStampedBy):
             cargo = pc.cargo
             # Actualiza el saldo del cargo asociado
             cargo.registrar_pago(pc.monto if pc.monto else Decimal('0.00')) 
+        
         self.estado = "confirmado"
         self.save()
 
@@ -85,6 +82,10 @@ class Pago(TimeStampedBy):
             self.estado = "fallido"
             self.save()
             
+    def __str__(self): 
+        estado = "" if self.is_active else "(inactivo)"
+        return f"P{self.pk}-U{self.user.id} ${self.monto_total} {estado}"
+    
 class PagoCargo(TimeStampedBy):
     pago = models.ForeignKey(Pago, on_delete=models.CASCADE, related_name="aplicaciones")
     cargo = models.ForeignKey(Cargo, on_delete=models.CASCADE, related_name="pagos")

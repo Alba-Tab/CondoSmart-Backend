@@ -1,5 +1,10 @@
 from django.contrib import admin
-from .models import Unidad, Residency, Vehiculo, Mascota, Contrato
+from .models import Unidad, Residency, Vehiculo, Mascota, Contrato, Condominio
+@admin.register(Condominio)
+class CondominioAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "direccion", "created_by", "updated_by")
+    search_fields = ("name", "direccion")
+    ordering = ("name",)
 
 @admin.register(Unidad)
 class UnidadAdmin(admin.ModelAdmin):

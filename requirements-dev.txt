@@ -1,0 +1,10 @@
+# Extiende requirements.txt
+-r requirements.txt
+
+# Librerías útiles en desarrollo y pruebas
+Faker==37.8.0
+pytest==8.3.3
+pytest-django==4.9.0
+coverage==7.6.1
+black==24.10.0
+flake8==7.1.1
