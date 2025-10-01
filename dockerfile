@@ -1,7 +1,4 @@
-FROM python:3.13.7
-
-# Evitar buffer en logs
-ENV PYTHONUNBUFFERED=1
+FROM python:3.13.7-slim
 
 # Crear directorio de trabajo
 WORKDIR /app
@@ -17,9 +14,3 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Copiar todo el proyecto
 COPY . /app/
-
-# Exponer el puerto de Django
-EXPOSE 8000
-
-# Comando por defecto
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]

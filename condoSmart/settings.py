@@ -89,12 +89,9 @@ DATABASES = {
         'NAME': os.getenv("DB_NAME","condosmart"),
         'USER': os.getenv("DB_USER","postgres"),
         'PASSWORD': os.getenv("DB_PASSWORD","1234"),
-        'HOST': os.getenv("DB_HOST","localhost"), #127.0.0.1
+        'HOST': os.getenv("DB_HOST","db"), #127.0.0.1
         'PORT': os.getenv("DB_PORT","5432"),
         'CONN_MAX_AGE': int(os.getenv("DB_CONN_MAX_AGE", 60)),
-        'OPTIONS': {
-            'sslmode':"require", 
-        },
     }
 }
 
