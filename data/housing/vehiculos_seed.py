@@ -8,7 +8,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from utils import enviar_post, enviar_get, get_token
+from data.utils import enviar_post, enviar_get, get_token
 headers = get_token()
 # 2. Función para generar placas con el formato específico
 def generar_placa_aleatoria():

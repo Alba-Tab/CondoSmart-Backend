@@ -1,5 +1,5 @@
 # accesos_seed.py
-from utils import enviar_post, get_token
+from data.utils import enviar_post, get_token
 from faker import Faker
 import os, random, time
 

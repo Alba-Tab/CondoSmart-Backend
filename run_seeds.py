@@ -11,7 +11,7 @@ def run_seed(path):
 
 if __name__ == "__main__":
     # 1. Seguridad / Accounts
-    run_seed("seguridad/Acounts.py")
+    run_seed("Acounts.py")
 
     # 2. Housing
     run_seed("housing/condominio_seed.py")

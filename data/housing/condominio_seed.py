@@ -1,4 +1,4 @@
-from utils import enviar_post, get_token
+from data.utils import enviar_post, get_token
 
 HEADERS = get_token()
 

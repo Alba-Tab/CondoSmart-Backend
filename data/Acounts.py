@@ -1,9 +1,9 @@
 import os
 import random
 from faker import Faker
-from utils import enviar_post
+from data.utils import enviar_post
 import requests
-from utils import get_token
+from data.utils import get_token
 
 fake = Faker("es_ES")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
